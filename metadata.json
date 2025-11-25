@@ -1,0 +1,5 @@
+{
+  "name": "Tablero Táctico: Contagio Cero",
+  "description": "Juego de mesa táctico sobre un mapa de EEUU dominado por facciones. Gestión de misiones y recursos.",
+  "requestFramePermissions": []
+}
