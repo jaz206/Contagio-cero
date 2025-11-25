@@ -1,8 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BossZone, Objective } from '../types';
 
-// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-// Assume this variable is pre-configured, valid, and accessible.
+// Access the API key exclusively from process.env.API_KEY.
+// This variable is assumed to be pre-configured and valid in the execution context.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Helper to generate IDs
