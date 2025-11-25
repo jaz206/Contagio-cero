@@ -1,14 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BossZone, Objective } from '../types';
 
-const apiKey = process.env.API_KEY || '';
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+// Assume this variable is pre-configured, valid, and accessible.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const generateMissionDetails = async (zone: BossZone, existingCount: number): Promise<{ title: string; description: string; objectives: Objective[] }> => {
-  // Default fallback content used if AI fails or key is missing
+  // Default fallback content used if AI fails
   const defaultTitle = `Operación ${zone.bossName} #${existingCount + 1}`;
   const defaultObjectivesStrings = ["Asegurar perímetro", "Recuperar datos", "Extracción táctica"];
   
@@ -19,16 +20,6 @@ export const generateMissionDetails = async (zone: BossZone, existingCount: numb
           completed: false
       }));
   };
-
-  if (!ai) {
-    console.warn("No API Key provided for Gemini.");
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return {
-      title: defaultTitle,
-      description: "Sistemas de IA desconectados. Introduzca API KEY para generar narrativa procedimental.",
-      objectives: mapToObjectives(defaultObjectivesStrings)
-    };
-  }
 
   try {
     // Sanitized prompt to avoid safety filters blocking "Violence/Zombies"
