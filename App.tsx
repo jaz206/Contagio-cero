@@ -432,7 +432,7 @@ const App: React.FC = () => {
             />
           </aside>
         </>
-      )}
+      }
     </div>
   );
 };
