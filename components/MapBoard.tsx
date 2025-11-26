@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import { Mission, Coordinates, MissionStatus, GameMode } from '../types';
 import { US_TOPOJSON_URL, STATE_ZONE_MAPPING, BOSS_ZONES, ZONE_LABELS } from '../constants';
-import { Target, Lock, CheckCircle, AlertTriangle, Crosshair } from 'lucide-react';
+import { Target, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface MapBoardProps {
   missions: Mission[];
@@ -35,6 +35,7 @@ const MapBoard: React.FC<MapBoardProps> = ({
   const [currentZoom, setCurrentZoom] = useState<d3.ZoomTransform>(d3.zoomIdentity);
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [hoveredMissionId, setHoveredMissionId] = useState<string | null>(null);
+  const [mouseCoords, setMouseCoords] = useState<Coordinates>({ x: 0, y: 0 });
 
   // Load Map Data
   useEffect(() => {
@@ -188,18 +189,10 @@ const MapBoard: React.FC<MapBoardProps> = ({
     );
   };
 
-  // --- CALIBRATION TOOL ---
-  const [debugPos, setDebugPos] = useState({ x: 500, y: 300 });
-  const [isDraggingDebug, setIsDraggingDebug] = useState(false);
-
-  const handleDebugMouseDown = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsDraggingDebug(true);
-  };
-
-  // Global mouse move for debug dragging (attached to svg)
+  // Track mouse coordinates for calibration
   const handleGlobalMouseMove = (e: React.MouseEvent) => {
-      if (isDraggingDebug) {
+      // Always track coordinates if calibrating
+      if (isCalibrating) {
           const rect = svgRef.current?.getBoundingClientRect();
           if (!rect) return;
           const viewBoxScaleX = dimensions.width / rect.width;
@@ -210,25 +203,34 @@ const MapBoard: React.FC<MapBoardProps> = ({
           const transformedX = (mouseX - currentZoom.x) / currentZoom.k;
           const transformedY = (mouseY - currentZoom.y) / currentZoom.k;
           
-          setDebugPos({ x: transformedX, y: transformedY });
+          setMouseCoords({ x: transformedX, y: transformedY });
       }
   };
 
-  const handleGlobalMouseUp = () => {
-      setIsDraggingDebug(false);
-  };
-
+  // Detect Drag vs Click for Mission Selection
+  const hasDraggedRef = useRef(false);
 
   return (
     <div ref={containerRef} className={`w-full h-full relative overflow-hidden select-none transition-colors duration-700 ${gameMode === 'ZOMBIES' ? 'bg-[#050a05]' : 'bg-dark-bg'}`}>
       
-      {/* Calibration Toggle */}
-      <button 
-        onClick={() => setIsCalibrating(!isCalibrating)}
-        className={`absolute top-20 right-4 z-50 text-[10px] font-mono px-2 py-1 border rounded transition-colors ${isCalibrating ? 'bg-cyan-900/50 text-cyan-400 border-cyan-500' : 'bg-slate-900/50 text-slate-500 border-slate-700'}`}
-      >
-          {isCalibrating ? '🔧 CALIBRANDO...' : '🔧 CALIBRAR'}
-      </button>
+      {/* Calibration Controls */}
+      <div className="absolute top-20 right-4 z-50 flex flex-col gap-2 items-end">
+        <button 
+            onClick={() => setIsCalibrating(!isCalibrating)}
+            className={`text-[10px] font-mono px-2 py-1 border rounded transition-colors ${isCalibrating ? 'bg-cyan-900/50 text-cyan-400 border-cyan-500' : 'bg-slate-900/50 text-slate-500 border-slate-700'}`}
+        >
+            {isCalibrating ? '🔧 CALIBRANDO...' : '🔧 CALIBRAR'}
+        </button>
+        
+        {isCalibrating && (
+             <div className="bg-slate-900/90 border border-cyan-500/50 rounded p-2 text-cyan-400 font-mono text-xs shadow-lg backdrop-blur-sm">
+                 <div className="flex gap-4">
+                     <span>X: <strong className="text-white">{Math.round(mouseCoords.x)}</strong></span>
+                     <span>Y: <strong className="text-white">{Math.round(mouseCoords.y)}</strong></span>
+                 </div>
+             </div>
+        )}
+      </div>
 
       {/* Loading State */}
       {!geoData && (
@@ -240,16 +242,15 @@ const MapBoard: React.FC<MapBoardProps> = ({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-        className="w-full h-full cursor-move"
+        className={`w-full h-full ${isCalibrating ? 'cursor-crosshair' : 'cursor-move'}`}
         onMouseMove={handleGlobalMouseMove}
-        onMouseUp={handleGlobalMouseUp}
-        onMouseDown={(e) => {
-            // Only allow map panning if we are clicking on background
-            if (e.target === svgRef.current) {
-                // D3 zoom handles this
+        onMouseDown={() => { hasDraggedRef.current = false; }}
+        onClick={(e) => {
+            // Only trigger background click if we haven't dragged significantly
+            if (!hasDraggedRef.current) {
+                onBackgroundClick();
             }
         }}
-        onClick={onBackgroundClick}
       >
         <defs>
           <pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -322,11 +323,11 @@ const MapBoard: React.FC<MapBoardProps> = ({
                     key={mission.id}
                     transform={`translate(${mission.position.x}, ${mission.position.y})`}
                     className="cursor-pointer"
-                    onMouseDown={(e) => e.stopPropagation()} // Stop drag/pan start
                     onMouseEnter={() => setHoveredMissionId(mission.id)}
                     onMouseLeave={() => setHoveredMissionId(null)}
                     onClick={(e) => {
                         e.stopPropagation();
+                        // Click logic: only select if not dragging map
                         onMissionSelect(mission.id);
                     }} 
                     >
@@ -377,15 +378,15 @@ const MapBoard: React.FC<MapBoardProps> = ({
                              {/* Hover Title in Dot Mode */}
                              {isHovered && (
                                  <g transform={`scale(${1 / Math.sqrt(currentZoom.k)})`}>
+                                     <rect x={-(mission.title.length * 3.5)} y="-28" width={mission.title.length * 7} height="16" rx="2" fill="rgba(0,0,0,0.8)" />
                                      <text
-                                         y="-15"
+                                         y="-16"
                                          textAnchor="middle"
                                          fill="white"
-                                         fontSize="12"
+                                         fontSize="10"
                                          fontFamily="Chakra Petch"
                                          fontWeight="bold"
                                          className="pointer-events-none drop-shadow-md"
-                                         style={{ textShadow: '0px 2px 4px black' }}
                                      >
                                          {mission.title}
                                      </text>
@@ -396,24 +397,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
                     </g>
                 );
             })}
-
-            {/* Debug Calibration Token */}
-            {isCalibrating && (
-                <g 
-                    transform={`translate(${debugPos.x}, ${debugPos.y}) scale(${1/currentZoom.k})`}
-                    onMouseDown={handleDebugMouseDown}
-                    className="cursor-crosshair"
-                >
-                    <circle r="50" fill="transparent" stroke="none" /> {/* Grab area */}
-                    <circle r="15" fill="none" stroke="#22d3ee" strokeWidth="2" />
-                    <circle r="2" fill="#22d3ee" />
-                    <line x1="-20" y1="0" x2="20" y2="0" stroke="#22d3ee" strokeWidth="1" />
-                    <line x1="0" y1="-20" x2="0" y2="20" stroke="#22d3ee" strokeWidth="1" />
-                    <text y="30" textAnchor="middle" fill="#22d3ee" fontSize="12" fontFamily="monospace" className="bg-black">
-                        {Math.round(debugPos.x)}, {Math.round(debugPos.y)}
-                    </text>
-                </g>
-            )}
         </g>
       </svg>
       

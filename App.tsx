@@ -103,7 +103,7 @@ const App: React.FC = () => {
               { id: 'k-2', text: "Todos debéis sobrevivir", completed: false }
             ],
             zoneId: 3, // Kingpin
-            position: { x: 870, y: 170 }, // New York fixed coords
+            position: { x: 821, y: 174 }, // Updated coordinates
             status: MissionStatus.AVAILABLE,
             dependencies: [],
             locationState: "New York",
@@ -119,7 +119,7 @@ const App: React.FC = () => {
                 { id: 'm-2', text: "Localizar 'La Cámara'", completed: false }
             ],
             zoneId: 3,
-            position: { x: 895, y: 150 }, // Near NYC
+            position: { x: 857, y: 216 }, // Updated coordinates
             status: MissionStatus.LOCKED,
             dependencies: ['kraven-hunt'],
             locationState: "New York",
