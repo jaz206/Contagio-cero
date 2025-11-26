@@ -20,37 +20,37 @@ const SCENES = [
   },
   {
     id: 3,
-    image: "https://i.pinimg.com/1200x/99/80/1e/99801e7603e4a770127ce29530f13f87.jpg",
+    image: "https://via.placeholder.com/800x450/1e293b/ffffff?text=LABORATORIO+EXPERIMENTAL",
     text: " Necesitaban cuerpos para afinar la fórmula. Usaron a mutantes y criminales para ver cómo se multiplicaba la infección.\nY funcionó. Dios, cómo funcionó."
   },
   {
     id: 4,
-    image: "https://i.pinimg.com/1200x/19/26/53/1926533335a2b27c4a79c9d2632ec83d.jpg",
-    text: " Pero la arrogancia siempre apunta hacia atrás.\nDecidieron probar su obra maestra en Bruce Banner. Buscaban una fuente de energía infinita..."
+    image: "https://via.placeholder.com/800x450/3f3f46/ffffff?text=HULK+EN+CAMARA+DE+STASIS",
+    text: "Pero la arrogancia siempre apunta hacia atrás.\nDecidieron probar su obra maestra en Bruce Banner. Buscaban una fuente de energía infinita..."
   },
   {
     id: 5,
-    image: "https://i.pinimg.com/736x/cf/f1/de/cff1deef61e1fb966db87e788e70935b.jpg",
+    image: "https://via.placeholder.com/800x450/84cc16/000000?text=EL+ESTALLIDO+GAMMA",
     text: "...lo que consiguieron fue una bomba biológica. Cuando el virus tocó la sangre gamma, no murió. Se enfureció.\nBanner no cayó. La cosa que despertó ya no tenía a nadie al volante."
   },
   {
     id: 6,
-    image: "https://i.pinimg.com/1200x/a8/e9/b7/a8e9b76d6a9a87de0cfba509d5fef534.jpg",
+    image: "https://via.placeholder.com/800x450/991b1b/ffffff?text=LA+CAIDA+DE+LOS+HEROES",
     text: "En cuestión de horas, Nueva York era un matadero. Los Vengadores cayeron primero, destrozados por los amigos que intentaban salvar.\nLos X-Men aguantaron un poco más, solo para ver cómo su escuela se convertía en un buffet."
   },
   {
     id: 7,
-    image: "https://i.pinimg.com/1200x/eb/db/e8/ebdbe8d5738acd105654dc8ddad8216f.jpg",
+    image: "https://via.placeholder.com/800x450/4c1d95/ffffff?text=LOS+TRONOS+DE+HUESO",
     text: "¿Y la Tríada? Doom, Magneto y Fisk no perdieron la mente. Sus cuerpos se pudrieron, pero su intelecto permaneció intacto.\nAhora se sientan en tronos de huesos, gobernando facciones de pesadilla."
   },
   {
     id: 8,
-    image: "https://i.pinimg.com/originals/b5/79/43/b5794321500237339759505300000735.jpg", // Reusing SHIELD/Hero image
+    image: "https://via.placeholder.com/800x450/1e3a8a/ffffff?text=SHIELD+SIGUE+ACTIVO",
     text: "Pero hay algo peor que los muertos. S.H.I.E.L.D. sigue activo.\nUna IA ciega, sorda y paranoica que ha decidido que la única forma de mantener el orden es eliminar todo lo que se mueva."
   },
   {
     id: 9,
-    image: "https://i.pinimg.com/1200x/18/99/ec/1899ec756f8731e015eb941d7122fbec.jpg", // Reusing destroyed city image
+    image: "https://via.placeholder.com/800x450/000000/ffffff?text=TU+DESTINO",
     text: "Así que aquí estás. De pie sobre las cenizas.\nA tu izquierda, los muertos marchan. A tu derecha, las máquinas apuntan sus láseres.\nYa no se trata de salvar el mundo. Se trata de ver quién queda en pie."
   }
 ];
@@ -113,7 +113,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
             onClick={() => onComplete('HEROES')}
             className="group relative h-96 border-2 border-slate-700 hover:border-blue-500 bg-slate-900/50 hover:bg-slate-900 overflow-hidden transition-all duration-300"
           >
-            <div className="absolute inset-0 bg-[url('https://i.pinimg.com/originals/b5/79/43/b5794321500237339759505300000735.jpg')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
+            <div className="absolute inset-0 bg-[url('https://via.placeholder.com/400x600/1e3a8a/ffffff?text=EL+HEROE+VIVO')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
             <div className="relative z-10 p-6 flex flex-col h-full justify-between text-left">
               <div>
                  <Shield className="w-12 h-12 text-blue-500 mb-4" />
@@ -130,7 +130,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
              onClick={() => onComplete('ZOMBIES')}
              className="group relative h-96 border-2 border-slate-700 hover:border-green-500 bg-slate-900/50 hover:bg-slate-900 overflow-hidden transition-all duration-300"
           >
-            <div className="absolute inset-0 bg-[url('https://4.bp.blogspot.com/-_bqF03KQ67I/U2VB2KfpqnI/AAAAAAAACqI/1jZAV2qQBB8/s1600/00Wolverine.jpg')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
+            <div className="absolute inset-0 bg-[url('https://via.placeholder.com/400x600/14532d/ffffff?text=EL+HEROE+ZOMBIE')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
              <div className="relative z-10 p-6 flex flex-col h-full justify-between text-left">
               <div>
                  <Biohazard className="w-12 h-12 text-green-500 mb-4" />
@@ -164,6 +164,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
             key={scene.id}
             src={scene.image} 
             alt="Scene" 
+            // Changed from object-cover to object-contain and added styling for comic look
             className="w-full h-full object-contain max-w-6xl mx-auto animate-in fade-in zoom-in-105 duration-[2000ms] shadow-2xl"
          />
       </div>
