@@ -35,7 +35,7 @@ const STORY_SCENES: Scene[] = [
   },
   {
     id: 5,
-    image: 'https://i.pinimg.com/736x/cf/f1/de/cff1deef61e1fb966db87e788e70935b.jpg',
+    image: 'https://i.pinimg.com/1200x/b2/06/15/b20615925dfa53cdf9622fb596cdd5e3.jpg',
     text: "Pero la arrogancia es una pistola cargada que siempre apunta hacia atrás. Decidieron probar su obra maestra en Bruce Banner. Buscaban una fuente de energía infinita...",
     caption: "EL PACIENTE CERO"
   },
@@ -53,19 +53,19 @@ const STORY_SCENES: Scene[] = [
   },
   {
     id: 8,
-    image: 'https://i.pinimg.com/1200x/71/06/7d/71067db72856dfd6ca03d0d51a679bd6.jpg',
+    image: 'https://i.pinimg.com/1200x/b9/0a/18/b90a18369639b131f91273f019b699cd.jpg',
     text: "En cuestión de horas, Nueva York era un matadero. Los Vengadores cayeron primero, destrozados por los amigos que intentaban salvar. Los X-Men aguantaron un poco más, solo para ver cómo su escuela se convertía en un buffet libre.",
     caption: "CAÍDA DE HÉROES"
   },
   {
     id: 9,
-    image: 'https://i.pinimg.com/1200x/99/80/1e/99801e7603e4a770127ce29530f13f87.jpg',
+    image: 'https://i.pinimg.com/1200x/e1/02/86/e102864e130bfa5b5f2ffc5a9d9ed9c0.jpg',
     text: "¿Y la Tríada? No perdieron la mente. Sus cuerpos se pudrieron, pero su intelecto permaneció intacto, afilado y hambriento. Ahora gobiernan facciones de pesadilla: Doomsberg, el Edén Roto y el Imperio de la Carne.",
     caption: "LOS NUEVOS REYES"
   },
   {
     id: 10,
-    image: 'https://cdnb.artstation.com/p/assets/images/images/024/956/983/large/luca-pizzari-shield-helicarrier-color.jpg?1584097863',
+    image: 'https://i.pinimg.com/1200x/e2/5c/3a/e25c3ac26e5fc65f9119b6073912e856.jpg',
     text: "Pero hay algo más ahí fuera. Cuando la gente murió, las máquinas no se apagaron. S.H.I.E.L.D. sigue activo. Nick Fury está muerto. Pero el 'Protocolo Lázaro' sigue corriendo en servidores enterrados.",
     caption: "LA IA VIGILANTE"
   },
@@ -140,7 +140,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden font-mono" onClick={handleSkip}>
+    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden font-mono" onClick={handleSkip}>
       
       {/* Visual Effects */}
       <div className="scanlines"></div>
@@ -152,7 +152,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onClose }) => {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-50 w-full max-w-5xl h-[85vh] flex flex-col bg-slate-950 border-2 border-slate-800 shadow-2xl overflow-hidden">
+      <div className="relative z-[100] w-full max-w-5xl h-[85vh] flex flex-col bg-slate-950 border-2 border-slate-800 shadow-2xl overflow-hidden">
         
         {/* Header - SHIELD STYLE */}
         <div className="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4">
