@@ -10,18 +10,18 @@ interface StoryIntroProps {
 const SCENES = [
   {
     id: 1,
-    image: "https://i.pinimg.com/1200x/18/99/ec/1899ec756f8731e015eb941d7122fbec.jpg",
-    text: " No hubo trompetas. No hubo cielos rojos ni profecías antiguas cumpliéndose. El fin del mundo no vino del espacio exterior, ni de una dimensión oscura.\nLo construimos nosotros. Aquí. En casa."
+    image: "https://via.placeholder.com/800x450/1e293b/ffffff?text=MARVEL+ZOMBIES:+CONTAGIO+CERO",
+    text: "No hubo trompetas. No hubo cielos rojos ni profecías antiguas cumpliéndose. El fin del mundo no vino del espacio exterior, ni de una dimensión oscura.\nLo construimos nosotros. Aquí. En casa."
   },
   {
     id: 2,
-    image: "https://i.pinimg.com/1200x/71/06/7d/71067db72856dfd6ca03d0d51a679bd6.jpg",
+    image: "https://via.placeholder.com/800x450/0f172a/ffffff?text=LA+CIUDAD+EN+RUINAS",
     text: "O mejor dicho, lo construyeron ellos.\nTres hombres se reunieron bajo luces fluorescentes: Doom, Magneto y Fisk.\nDecidieron que la humanidad era demasiado caótica. Su solución fue el PULSO NULIFICADOR."
   },
   {
     id: 3,
     image: "https://via.placeholder.com/800x450/1e293b/ffffff?text=LABORATORIO+EXPERIMENTAL",
-    text: " Necesitaban cuerpos para afinar la fórmula. Usaron a mutantes y criminales para ver cómo se multiplicaba la infección.\nY funcionó. Dios, cómo funcionó."
+    text: "Necesitaban cuerpos para afinar la fórmula. Usaron a mutantes y criminales para ver cómo se multiplicaba la infección.\nY funcionó. Dios, cómo funcionó."
   },
   {
     id: 4,
@@ -158,20 +158,19 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
       <div className="scanlines absolute inset-0 pointer-events-none z-50 opacity-10"></div>
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/90 pointer-events-none z-20"></div>
 
-      {/* Main Image Layer with CONTAINER FIX */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center p-4 pb-32">
+      {/* Main Image Layer */}
+      <div className="absolute inset-0 z-0">
          <img 
             key={scene.id}
             src={scene.image} 
             alt="Scene" 
-            // Changed from object-cover to object-contain and added styling for comic look
-            className="w-full h-full object-contain max-w-6xl mx-auto animate-in fade-in zoom-in-105 duration-[2000ms] shadow-2xl"
+            className="w-full h-full object-cover animate-in fade-in zoom-in-105 duration-[2000ms]"
          />
       </div>
 
       {/* Text Container */}
-      <div className="absolute bottom-0 w-full z-30 p-8 md:p-12 pb-16 flex flex-col items-center">
-         <div className="max-w-3xl w-full bg-black/90 border-2 border-white/20 p-6 shadow-2xl backdrop-blur-sm relative">
+      <div className="absolute bottom-0 w-full z-30 p-12 pb-16 flex flex-col items-center">
+         <div className="max-w-3xl w-full bg-black/80 border-2 border-white/20 p-6 shadow-2xl backdrop-blur-sm relative">
             {/* Corner Accents */}
             <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-yellow-500"></div>
             <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-yellow-500"></div>
