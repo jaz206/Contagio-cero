@@ -113,7 +113,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
             onClick={() => onComplete('HEROES')}
             className="group relative h-96 border-2 border-slate-700 hover:border-blue-500 bg-slate-900/50 hover:bg-slate-900 overflow-hidden transition-all duration-300"
           >
-            <div className="absolute inset-0 bg-[url('https://via.placeholder.com/400x600/1e3a8a/ffffff?text=EL+HEROE+VIVO')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
+            <div className="absolute inset-0 bg-[url('https://i.pinimg.com/originals/b5/79/43/b5794321500237339759505300000735.jpg')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
             <div className="relative z-10 p-6 flex flex-col h-full justify-between text-left">
               <div>
                  <Shield className="w-12 h-12 text-blue-500 mb-4" />
