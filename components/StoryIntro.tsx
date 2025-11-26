@@ -130,7 +130,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
              onClick={() => onComplete('ZOMBIES')}
              className="group relative h-96 border-2 border-slate-700 hover:border-green-500 bg-slate-900/50 hover:bg-slate-900 overflow-hidden transition-all duration-300"
           >
-            <div className="absolute inset-0 bg-[url('https://via.placeholder.com/400x600/14532d/ffffff?text=EL+HEROE+ZOMBIE')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
+            <div className="absolute inset-0 bg-[url('https://4.bp.blogspot.com/-_bqF03KQ67I/U2VB2KfpqnI/AAAAAAAACqI/1jZAV2qQBB8/s1600/00Wolverine.jpg')] bg-cover bg-center opacity-40 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay"></div>
              <div className="relative z-10 p-6 flex flex-col h-full justify-between text-left">
               <div>
                  <Biohazard className="w-12 h-12 text-green-500 mb-4" />
