@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
   <head>
@@ -16,10 +15,10 @@
               mono: ['Chakra Petch', 'monospace'],
             },
             colors: {
-              'boss-1': '#dc2626', // Magneto
-              'boss-2': '#84cc16', // Hulk
-              'boss-3': '#9333ea', // Kingpin
-              'boss-4': '#166534', // Doom
+              'boss-1': '#dc2626', // Magneto (Rojo)
+              'boss-2': '#84cc16', // Hulk (Verde Clarito/Lima)
+              'boss-3': '#9333ea', // Kingpin (Morado)
+              'boss-4': '#166534', // Doom (Verde Oscuro)
               'dark-bg': '#020617',
               'panel-bg': '#0f172a',
             }
@@ -49,40 +48,8 @@
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
       }
-      
-      /* INTRO EFFECTS */
-      .scanlines {
-        background: linear-gradient(
-          to bottom,
-          rgba(255,255,255,0),
-          rgba(255,255,255,0) 50%,
-          rgba(0,0,0,0.2) 50%,
-          rgba(0,0,0,0.2)
-        );
-        background-size: 100% 4px;
-        animation: scanlineMove 0.2s linear infinite;
-      }
-      @keyframes scanlineMove {
-        0% { background-position: 0 0; }
-        100% { background-position: 0 4px; }
-      }
-      .typewriter::after {
-        content: '_';
-        animation: blink 1s infinite;
-      }
-      @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-      }
-      @keyframes bounce-right {
-         0%, 100% { transform: translateX(0); }
-         50% { transform: translateX(3px); }
-      }
-      .animate-bounce-right {
-        animation: bounce-right 1s infinite;
-      }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",
