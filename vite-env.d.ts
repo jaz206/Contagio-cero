@@ -1,16 +1,14 @@
-// /// <reference types="vite/client" />
-
 interface ImportMetaEnv {
-  readonly VITE_API_KEY: string
-  [key: string]: any
+  readonly VITE_API_KEY: string;
+  [key: string]: any;
 }
 
 interface ImportMeta {
-  readonly env: ImportMetaEnv
+  readonly env: ImportMetaEnv;
 }
 
-declare const process: {
-  env: {
+declare namespace NodeJS {
+  interface ProcessEnv {
     API_KEY: string;
     [key: string]: any;
   }

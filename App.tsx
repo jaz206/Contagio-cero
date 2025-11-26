@@ -71,11 +71,11 @@ const App: React.FC = () => {
               { id: 'obj-init-1', text: "Establecer perímetro seguro", completed: true },
               { id: 'obj-init-2', text: "Contactar con supervivientes", completed: true }
             ],
-            zoneId: 0, // Changed from 3 (Kingpin) to 0 (Resistance)
-            position: { x: 700, y: 190 }, // PA/NY area
+            zoneId: 0, 
+            position: { x: 500, y: 300 }, // Center
             status: MissionStatus.COMPLETED,
             dependencies: [],
-            locationState: "Pennsylvania",
+            locationState: "Nebraska",
             gameMode: 'HEROES'
         };
 
@@ -87,14 +87,46 @@ const App: React.FC = () => {
               { id: 'z-1', text: "Sobrevivir a la horda inicial", completed: true },
             ],
             zoneId: 2, // Hulk territory (The Wasteland)
-            position: { x: 550, y: 220 }, // Chicago/Illinois area
+            position: { x: 670, y: 220 }, // Chicago area fixed coords
             status: MissionStatus.COMPLETED,
             dependencies: [],
             locationState: "Illinois",
             gameMode: 'ZOMBIES'
         };
 
-        setMissions([bunkerHero, bunkerZombie]);
+        const kravenMission: Mission = {
+            id: 'kraven-hunt',
+            title: 'LA CAZA MAYOR DE KRAVEN',
+            description: "No hay órdenes. Solo el rastro de los gritos y la desesperación. Kraven el Cazador ha marcado estas ruinas como su coto de caza. Debéis evacuar a un mínimo de 5 supervivientes por el Metro.",
+            objectives: [
+              { id: 'k-1', text: "¡Deten la caceria!", completed: false },
+              { id: 'k-2', text: "Todos debéis sobrevivir", completed: false }
+            ],
+            zoneId: 3, // Kingpin
+            position: { x: 870, y: 170 }, // New York fixed coords
+            status: MissionStatus.AVAILABLE,
+            dependencies: [],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
+
+        const meatMission: Mission = {
+            id: 'meat-sleeps',
+            title: 'DONDE LA CARNE DUERME',
+            description: "El Metro quedó atrás. Un técnico murmuraba sobre camiones y un viejo penal en el este. Fisk guarda algo allí que no quiere que nadie vea. Si el rumor es cierto, dentro hallaréis más que respuestas.",
+            objectives: [
+                { id: 'm-1', text: "Investigar el penal abandonado", completed: false },
+                { id: 'm-2', text: "Localizar 'La Cámara'", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 895, y: 150 }, // Near NYC
+            status: MissionStatus.LOCKED,
+            dependencies: ['kraven-hunt'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
+
+        setMissions([bunkerHero, bunkerZombie, kravenMission, meatMission]);
     }
   }, []);
 
@@ -118,6 +150,11 @@ const App: React.FC = () => {
 
   // Selection
   const handleMissionSelect = (id: string) => {
+    // If clicking the Bunker, switch to Bunker View immediately
+    if (id === 'bunker-alpha') {
+        setViewMode('BUNKER');
+        return;
+    }
     setSelectedMissionId(id);
   };
 

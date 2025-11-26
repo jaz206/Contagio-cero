@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import { Mission, Coordinates, MissionStatus, GameMode } from '../types';
 import { US_TOPOJSON_URL, STATE_ZONE_MAPPING, BOSS_ZONES, ZONE_LABELS } from '../constants';
-import { Target, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Target, Lock, CheckCircle, AlertTriangle, Crosshair } from 'lucide-react';
 
 interface MapBoardProps {
   missions: Mission[];
@@ -29,10 +29,12 @@ const MapBoard: React.FC<MapBoardProps> = ({
   const contentGroupRef = useRef<SVGGElement>(null);
   
   const [geoData, setGeoData] = useState<any>(null);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-  const [isDragging, setIsDragging] = useState<string | null>(null);
-  // Store the current zoom transform to calculate drag positions correctly
+  // Fixed internal coordinate system
+  const dimensions = { width: 1000, height: 600 };
+  
   const [currentZoom, setCurrentZoom] = useState<d3.ZoomTransform>(d3.zoomIdentity);
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [hoveredMissionId, setHoveredMissionId] = useState<string | null>(null);
 
   // Load Map Data
   useEffect(() => {
@@ -45,32 +47,17 @@ const MapBoard: React.FC<MapBoardProps> = ({
       .catch(err => console.error("Failed to load map data", err));
   }, []);
 
-  // Responsive D3 Setup
-  useEffect(() => {
-    const updateDims = () => {
-      if (containerRef.current) {
-        setDimensions({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight
-        });
-      }
-    };
-    window.addEventListener('resize', updateDims);
-    updateDims();
-    return () => window.removeEventListener('resize', updateDims);
-  }, []);
-
-  // Projection
+  // Projection setup
   const projection = useMemo(() => {
-    // Standard projection fitting the container
-    return d3.geoAlbersUsa().fitSize([dimensions.width, dimensions.height], geoData || { type: "FeatureCollection", features: [] });
-  }, [dimensions, geoData]);
+    // fitExtent with padding ensures map is centered and doesn't touch edges
+    return d3.geoAlbersUsa().fitExtent([[50, 50], [950, 550]], geoData || { type: "FeatureCollection", features: [] });
+  }, [geoData]);
 
   const pathGenerator = useMemo(() => {
     return d3.geoPath().projection(projection);
   }, [projection]);
 
-  // Calculate centroids and notify parent
+  // Calculate centroids
   useEffect(() => {
       if (geoData && onMapLayout && pathGenerator) {
           const locations: Record<string, Coordinates> = {};
@@ -89,8 +76,8 @@ const MapBoard: React.FC<MapBoardProps> = ({
       if (!svgRef.current || !contentGroupRef.current) return;
 
       const zoom = d3.zoom<SVGSVGElement, unknown>()
-          .scaleExtent([1, 8]) // Zoom limits: 1x to 8x
-          .translateExtent([[0, 0], [dimensions.width, dimensions.height]])
+          .scaleExtent([0.5, 40]) // Allow deep zoom (up to 40x) and slight zoom out (0.5x)
+          // Removed translateExtent to prevent blocking
           .on('zoom', (event) => {
               if (contentGroupRef.current) {
                   d3.select(contentGroupRef.current).attr('transform', event.transform);
@@ -100,80 +87,43 @@ const MapBoard: React.FC<MapBoardProps> = ({
 
       const selection = d3.select(svgRef.current);
       selection.call(zoom);
-      
-      // Disable double click zoom
       selection.on("dblclick.zoom", null);
 
       return () => {
           selection.on('.zoom', null);
       };
-  }, [dimensions]); // Re-init zoom when dims change
-
-  // Drag Handlers for Tokens
-  const handleMouseDown = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevent zoom trigger
-    setIsDragging(id);
-    onMissionSelect(id);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      // We need to calculate the mouse position RELATIVE to the zoomed group content
-      // formula: (screen_coord - zoom_translate) / zoom_scale
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const transformedX = (mouseX - currentZoom.x) / currentZoom.k;
-      const transformedY = (mouseY - currentZoom.y) / currentZoom.k;
-
-      onMissionMove(isDragging, { x: transformedX, y: transformedY });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(null);
-  };
+  }, []);
 
   // Helper to get Color by Zone
   const getStateColor = (stateName: string) => {
     const zoneId = STATE_ZONE_MAPPING[stateName];
     const zone = BOSS_ZONES.find(z => z.id === zoneId);
-    
-    // In Zombies mode, desaturate standard colors and make them more toxic
     if (gameMode === 'ZOMBIES') {
-        if (!zone) return '#1a2e1a'; // Dark green bg
-        // Just a simple mapping or override for zombie mode
-        // For simplicity, we use the same zone colors but maybe we could darken them
+        if (!zone) return '#1a2e1a'; 
         return zone.color; 
     }
-    
-    return zone ? zone.color : '#334155'; // default slate-700
+    return zone ? zone.color : '#334155'; 
   };
 
-  // Calculate Label Positions (State Names)
-  const renderLabels = () => {
+  // Render State Names
+  const renderStateLabels = () => {
       if (!geoData) return null;
       return geoData.features.map((feature: any, i: number) => {
           const centroid = pathGenerator.centroid(feature);
           if (!centroid || isNaN(centroid[0])) return null;
           
-          // Only show labels for states that are large enough or if zoomed in
-          // This prevents clutter when fully zoomed out
-          const shouldShow = currentZoom.k > 2 || (pathGenerator.area(feature) > 500);
-
           return (
               <text
                   key={`label-${i}`}
                   x={centroid[0]}
                   y={centroid[1]}
                   textAnchor="middle"
-                  fill="rgba(255,255,255,0.5)"
-                  fontSize={10 / Math.sqrt(currentZoom.k)} // Scale font down slightly as we zoom in so it doesn't get huge
+                  fill="rgba(255,255,255,0.6)"
+                  fontSize={10} 
+                  // Counter-scale font so it stays readable but doesn't get massive when zooming in
+                  transform={`scale(${1/Math.sqrt(Math.max(1, currentZoom.k))})`}
+                  style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                   className="pointer-events-none font-mono uppercase tracking-widest select-none"
-                  style={{ opacity: shouldShow ? 1 : 0, transition: 'opacity 0.3s' }}
               >
                   {feature.properties.name}
               </text>
@@ -181,18 +131,11 @@ const MapBoard: React.FC<MapBoardProps> = ({
       });
   };
 
-  // Render Large Watermark Zone Labels
   const renderZoneWatermarks = () => {
     return ZONE_LABELS.map(label => {
       const coords = projection(label.coordinates as [number, number]);
       if (!coords) return null;
-      
       const zone = BOSS_ZONES.find(z => z.id === label.id);
-
-      // Calculate dynamic opacity based on zoom - fade out as we zoom in too much to avoid clutter
-      // But keep base opacity high enough to be seen
-      const opacity = Math.max(0.1, 0.3 - (currentZoom.k * 0.05));
-
       const lines = label.text.split('\n');
 
       return (
@@ -203,30 +146,20 @@ const MapBoard: React.FC<MapBoardProps> = ({
           textAnchor="middle"
           dominantBaseline="middle"
           fill={zone?.color || '#ffffff'}
-          fillOpacity={opacity}
+          fillOpacity={0.15} 
           fontSize={50}
           fontWeight="900"
           className="pointer-events-none font-mono tracking-[0.1em] uppercase select-none"
-          style={{ 
-             textShadow: '0 0 40px rgba(0,0,0,0.8)',
-             transformOrigin: 'center',
-          }}
+          style={{ textShadow: '0 0 40px rgba(0,0,0,0.8)' }}
         >
           {lines.map((line, i) => (
-             <tspan 
-                key={i} 
-                x={coords[0]} 
-                dy={i === 0 ? (lines.length > 1 ? "-0.6em" : "0") : "1.2em"}
-             >
-                {line}
-             </tspan>
+             <tspan key={i} x={coords[0]} dy={i === 0 ? (lines.length > 1 ? "-0.6em" : "0") : "1.2em"}>{line}</tspan>
           ))}
         </text>
       );
     });
   };
 
-  // Render Connections (Bezier Curves)
   const renderConnections = () => {
     return missions.flatMap(mission => 
       mission.dependencies.map(depId => {
@@ -235,30 +168,19 @@ const MapBoard: React.FC<MapBoardProps> = ({
 
         const path = d3.path();
         path.moveTo(parent.position.x, parent.position.y);
-        
-        // Curve control point
         const midX = (parent.position.x + mission.position.x) / 2;
-        const midY = (parent.position.y + mission.position.y) / 2 - 50; // curve upward
-        
+        const midY = (parent.position.y + mission.position.y) / 2 - 50; 
         path.quadraticCurveTo(midX, midY, mission.position.x, mission.position.y);
 
         return (
           <g key={`${parent.id}-${mission.id}`}>
-             {/* Halo for visibility */}
-            <path
-              d={path.toString()}
-              fill="none"
-              stroke="#000"
-              strokeWidth={4 / currentZoom.k} // Keep stroke width consistent visually
-              opacity="0.5"
-            />
+            <path d={path.toString()} fill="none" stroke="#000" strokeWidth={4 / currentZoom.k} opacity="0.5" />
             <path
               d={path.toString()}
               fill="none"
               stroke={mission.status === MissionStatus.LOCKED ? '#94a3b8' : '#facc15'}
               strokeWidth={2 / currentZoom.k}
               strokeDasharray={mission.status === MissionStatus.LOCKED ? "5,5" : "none"}
-              markerEnd={`url(#arrow-${mission.status})`}
             />
           </g>
         );
@@ -266,35 +188,79 @@ const MapBoard: React.FC<MapBoardProps> = ({
     );
   };
 
+  // --- CALIBRATION TOOL ---
+  const [debugPos, setDebugPos] = useState({ x: 500, y: 300 });
+  const [isDraggingDebug, setIsDraggingDebug] = useState(false);
+
+  const handleDebugMouseDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsDraggingDebug(true);
+  };
+
+  // Global mouse move for debug dragging (attached to svg)
+  const handleGlobalMouseMove = (e: React.MouseEvent) => {
+      if (isDraggingDebug) {
+          const rect = svgRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          const viewBoxScaleX = dimensions.width / rect.width;
+          const viewBoxScaleY = dimensions.height / rect.height;
+          const mouseX = (e.clientX - rect.left) * viewBoxScaleX;
+          const mouseY = (e.clientY - rect.top) * viewBoxScaleY;
+          
+          const transformedX = (mouseX - currentZoom.x) / currentZoom.k;
+          const transformedY = (mouseY - currentZoom.y) / currentZoom.k;
+          
+          setDebugPos({ x: transformedX, y: transformedY });
+      }
+  };
+
+  const handleGlobalMouseUp = () => {
+      setIsDraggingDebug(false);
+  };
+
+
   return (
     <div ref={containerRef} className={`w-full h-full relative overflow-hidden select-none transition-colors duration-700 ${gameMode === 'ZOMBIES' ? 'bg-[#050a05]' : 'bg-dark-bg'}`}>
+      
+      {/* Calibration Toggle */}
+      <button 
+        onClick={() => setIsCalibrating(!isCalibrating)}
+        className={`absolute top-20 right-4 z-50 text-[10px] font-mono px-2 py-1 border rounded transition-colors ${isCalibrating ? 'bg-cyan-900/50 text-cyan-400 border-cyan-500' : 'bg-slate-900/50 text-slate-500 border-slate-700'}`}
+      >
+          {isCalibrating ? '🔧 CALIBRANDO...' : '🔧 CALIBRAR'}
+      </button>
+
+      {/* Loading State */}
+      {!geoData && (
+          <div className="absolute inset-0 flex items-center justify-center text-slate-500 font-mono text-sm animate-pulse">
+              Inicializando Satélites...
+          </div>
+      )}
+
       <svg
         ref={svgRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        className="w-full h-full cursor-grab active:cursor-grabbing"
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onClick={onBackgroundClick} // Clicking empty space deselects
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+        className="w-full h-full cursor-move"
+        onMouseMove={handleGlobalMouseMove}
+        onMouseUp={handleGlobalMouseUp}
+        onMouseDown={(e) => {
+            // Only allow map panning if we are clicking on background
+            if (e.target === svgRef.current) {
+                // D3 zoom handles this
+            }
+        }}
+        onClick={onBackgroundClick}
       >
         <defs>
-          <marker id="arrow-AVAILABLE" markerWidth="10" markerHeight="10" refX="22" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L9,3 z" fill="#facc15" />
-          </marker>
-          <marker id="arrow-LOCKED" markerWidth="10" markerHeight="10" refX="22" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8" />
-          </marker>
-          <marker id="arrow-COMPLETED" markerWidth="10" markerHeight="10" refX="22" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L9,3 z" fill="#10b981" />
-          </marker>
-          {/* Pattern for zombies mode maybe? */}
           <pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <rect width="2" height="4" transform="translate(0,0)" fill="black" opacity="0.3"></rect>
           </pattern>
         </defs>
 
-        {/* Group that gets transformed by Zoom/Pan */}
-        <g ref={contentGroupRef}>
+        {/* Ghost Rect to catch all mouse events for Zooming/Panning even on empty space */}
+        <rect width={dimensions.width} height={dimensions.height} fill="transparent" />
+
+        <g ref={contentGroupRef} transform={currentZoom.toString()}>
             
             {/* Map Layer */}
             <g className="opacity-80 transition-all duration-700">
@@ -304,12 +270,11 @@ const MapBoard: React.FC<MapBoardProps> = ({
                 d={pathGenerator(feature) || ''}
                 fill={getStateColor(feature.properties.name)}
                 stroke={gameMode === 'ZOMBIES' ? '#2f4f2f' : '#1e293b'}
-                strokeWidth={1 / currentZoom.k} // Dynamic stroke width
+                strokeWidth={1 / currentZoom.k}
                 className="transition-colors duration-300 hover:brightness-110"
                 fillOpacity={gameMode === 'ZOMBIES' ? "0.15" : "0.2"}
                 />
             ))}
-            {/* Borders / Overlay */}
             {geoData && (
                 <path 
                 d={pathGenerator(geoData) || ''} 
@@ -321,96 +286,146 @@ const MapBoard: React.FC<MapBoardProps> = ({
             )}
             </g>
 
-            {/* Zone Watermarks Layer (Overlay on map, but under tokens) */}
             <g>{renderZoneWatermarks()}</g>
-
-            {/* State Names Layer */}
-            <g>{renderLabels()}</g>
-
-            {/* Connections Layer */}
+            <g>{renderStateLabels()}</g>
             {renderConnections()}
 
             {/* Tokens Layer */}
             {missions.map((mission) => {
                 const isSelected = selectedMissionId === mission.id;
+                const isHovered = hoveredMissionId === mission.id;
                 let Icon = AlertTriangle;
                 let color = "text-yellow-400";
                 let ringColor = "stroke-yellow-400";
-                
+                let dotFill = "#facc15"; // yellow-400
+
                 if(mission.status === MissionStatus.COMPLETED) {
                     Icon = CheckCircle;
                     color = "text-green-500";
                     ringColor = "stroke-green-500";
+                    dotFill = "#10b981"; // green-500
                 } else if (mission.status === MissionStatus.LOCKED) {
                     Icon = Lock;
                     color = "text-slate-500";
                     ringColor = "stroke-slate-500";
+                    dotFill = "#64748b"; // slate-500
                 } else {
                     Icon = Target;
                 }
 
-                // Scale tokens inversely to zoom so they remain readable but attached to map
-                const scale = 1 / Math.sqrt(currentZoom.k); 
+                // LEVEL OF DETAIL LOGIC
+                // If zoom is less than 2.5, show simple DOT
+                const showDetail = currentZoom.k > 2.5;
 
                 return (
                     <g
                     key={mission.id}
-                    transform={`translate(${mission.position.x}, ${mission.position.y}) scale(${scale})`}
-                    className="cursor-pointer transition-opacity duration-200 hover:opacity-100 opacity-90"
-                    onMouseDown={(e) => handleMouseDown(e, mission.id)}
-                    onClick={(e) => e.stopPropagation()} 
+                    transform={`translate(${mission.position.x}, ${mission.position.y})`}
+                    className="cursor-pointer"
+                    onMouseDown={(e) => e.stopPropagation()} // Stop drag/pan start
+                    onMouseEnter={() => setHoveredMissionId(mission.id)}
+                    onMouseLeave={() => setHoveredMissionId(null)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onMissionSelect(mission.id);
+                    }} 
                     >
-                    {/* Selection Ring */}
-                    {isSelected && (
-                        <circle r="26" fill="none" stroke="white" strokeWidth="2" strokeDasharray="4 2" className="animate-spin-slow origin-center" />
+                    
+                    {showDetail ? (
+                        // FULL TOKEN VIEW (Zoomed In)
+                        <g transform={`scale(${1 / Math.sqrt(currentZoom.k)})`}>
+                            {isSelected && (
+                                <circle r="26" fill="none" stroke="white" strokeWidth="2" strokeDasharray="4 2" className="animate-spin-slow origin-center" />
+                            )}
+                            <circle 
+                                r="20" 
+                                fill="#0f172a" 
+                                strokeWidth="3" 
+                                className={`${ringColor} hover:stroke-white transition-colors duration-200`} 
+                                stroke="currentColor" 
+                            />
+                            <foreignObject x="-12" y="-12" width="24" height="24" className="pointer-events-none">
+                                <div className={`flex items-center justify-center w-full h-full ${color}`}>
+                                    <Icon size={24} />
+                                </div>
+                            </foreignObject>
+                            <text
+                                y="40"
+                                textAnchor="middle"
+                                fill="white"
+                                fontSize="14"
+                                fontFamily="Chakra Petch"
+                                className="drop-shadow-md bg-black/50 pointer-events-none"
+                                style={{ textShadow: '2px 2px 2px #000' }}
+                            >
+                                {mission.title}
+                            </text>
+                        </g>
+                    ) : (
+                        // DOT VIEW (Zoomed Out)
+                        <g>
+                             {/* Larger invisible hit area for easier clicking */}
+                             <circle r={10 / currentZoom.k} fill="transparent" />
+                             {/* Visible dot */}
+                             <circle 
+                                r={5 / Math.sqrt(currentZoom.k)} 
+                                fill={dotFill} 
+                                stroke="#0f172a"
+                                strokeWidth={1 / currentZoom.k}
+                                className="transition-transform duration-200 hover:scale-150"
+                             />
+                             {/* Hover Title in Dot Mode */}
+                             {isHovered && (
+                                 <g transform={`scale(${1 / Math.sqrt(currentZoom.k)})`}>
+                                     <text
+                                         y="-15"
+                                         textAnchor="middle"
+                                         fill="white"
+                                         fontSize="12"
+                                         fontFamily="Chakra Petch"
+                                         fontWeight="bold"
+                                         className="pointer-events-none drop-shadow-md"
+                                         style={{ textShadow: '0px 2px 4px black' }}
+                                     >
+                                         {mission.title}
+                                     </text>
+                                 </g>
+                             )}
+                        </g>
                     )}
-                    
-                    {/* Token Background */}
-                    <circle 
-                        r="20" 
-                        fill="#0f172a" 
-                        strokeWidth="3" 
-                        className={`${ringColor} hover:stroke-white transition-colors duration-200`} 
-                        stroke="currentColor" 
-                    />
-                    
-                    {/* Icon */}
-                    <foreignObject x="-12" y="-12" width="24" height="24" className="pointer-events-none">
-                        <div className={`flex items-center justify-center w-full h-full ${color}`}>
-                            <Icon size={24} />
-                        </div>
-                    </foreignObject>
-
-                    {/* Label - Shows below token */}
-                    <text
-                        y="40"
-                        textAnchor="middle"
-                        fill="white"
-                        fontSize="14"
-                        fontFamily="Chakra Petch"
-                        className="drop-shadow-md bg-black/50 pointer-events-none"
-                        style={{ textShadow: '2px 2px 2px #000' }}
-                    >
-                        {mission.title}
-                    </text>
                     </g>
                 );
             })}
+
+            {/* Debug Calibration Token */}
+            {isCalibrating && (
+                <g 
+                    transform={`translate(${debugPos.x}, ${debugPos.y}) scale(${1/currentZoom.k})`}
+                    onMouseDown={handleDebugMouseDown}
+                    className="cursor-crosshair"
+                >
+                    <circle r="50" fill="transparent" stroke="none" /> {/* Grab area */}
+                    <circle r="15" fill="none" stroke="#22d3ee" strokeWidth="2" />
+                    <circle r="2" fill="#22d3ee" />
+                    <line x1="-20" y1="0" x2="20" y2="0" stroke="#22d3ee" strokeWidth="1" />
+                    <line x1="0" y1="-20" x2="0" y2="20" stroke="#22d3ee" strokeWidth="1" />
+                    <text y="30" textAnchor="middle" fill="#22d3ee" fontSize="12" fontFamily="monospace" className="bg-black">
+                        {Math.round(debugPos.x)}, {Math.round(debugPos.y)}
+                    </text>
+                </g>
+            )}
         </g>
       </svg>
       
-      {/* HUD Info */}
       <div className="absolute bottom-4 left-4 pointer-events-none text-slate-500 text-xs font-mono">
          ZOOM: {currentZoom.k.toFixed(1)}x <br/>
-         COORDS: {isDragging ? 'UPDATING...' : 'STABLE'} <br/>
-         MODE: {gameMode}
+         MODE: {gameMode} <br/>
+         {isCalibrating && <span className="text-cyan-400 animate-pulse">MODO CALIBRACIÓN ACTIVO</span>}
       </div>
       
-      {/* Zoom Hints */}
       <div className="absolute top-4 right-4 pointer-events-none text-slate-600 text-[10px] font-mono border border-slate-800 p-2 bg-slate-900/80 rounded">
-          <p>RUEDA DEL RATÓN: ZOOM</p>
-          <p>ARRASTRAR FONDO: MOVER MAPA</p>
-          <p>ARRASTRAR TOKEN: MOVER MISIÓN</p>
+          <p>RUEDA: ZOOM (0.5x - 40x)</p>
+          <p>ARRASTRAR: MOVER MAPA</p>
       </div>
     </div>
   );

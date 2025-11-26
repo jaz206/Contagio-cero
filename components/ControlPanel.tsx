@@ -161,7 +161,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       const updates: Partial<Mission> = { locationState: newState };
       
       if (stateLocations[newState]) {
-          updates.position = { ...stateLocations[newState] };
+          // Add random Jitter (+/- 20px) to prevent overlapping when multiple missions are in the same state
+          const jitterX = (Math.random() * 40) - 20;
+          const jitterY = (Math.random() * 40) - 20;
+          updates.position = { 
+              x: stateLocations[newState].x + jitterX, 
+              y: stateLocations[newState].y + jitterY 
+          };
       }
       
       if (STATE_ZONE_MAPPING[newState]) {

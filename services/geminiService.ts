@@ -1,9 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BossZone, Objective } from '../types';
 
-// Access the API key exclusively from process.env.API_KEY.
-// This variable is assumed to be pre-configured and valid in the execution context.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Access the API key exclusively from import.meta.env.VITE_API_KEY for Vite/Vercel
+// Using optional chaining to prevent crash if env is not loaded yet
+const apiKey = import.meta.env?.VITE_API_KEY || '';
+const ai = new GoogleGenAI({ apiKey });
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
