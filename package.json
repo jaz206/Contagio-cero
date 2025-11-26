@@ -1,3 +1,4 @@
+
 {
   "name": "contagio-cero",
   "private": true,
@@ -14,7 +15,8 @@
     "@google/genai": "latest",
     "lucide-react": "^0.378.0",
     "d3": "^7.9.0",
-    "topojson-client": "^3.1.0"
+    "topojson-client": "^3.1.0",
+    "firebase": "^10.12.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",

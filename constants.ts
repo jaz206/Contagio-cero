@@ -1,3 +1,4 @@
+
 import { BossZone } from './types';
 
 export const US_TOPOJSON_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
@@ -68,7 +69,7 @@ export const STATE_ZONE_MAPPING: Record<string, number> = {
 // Coordenadas aproximadas [Longitud, Latitud] para etiquetas de fondo
 export const ZONE_LABELS = [
   { id: 1, text: "NUEVO EDÉN", coordinates: [-113, 39] },
-  { id: 2, text: "TIERRA DE NADIE", coordinates: [-96, 42] },
+  { id: 2, text: "TIERRA\nDE NADIE", coordinates: [-96, 42] },
   { id: 3, text: "IMPERIO\nDE LA CARNE", coordinates: [-76, 42] },
   { id: 4, text: "DOOMSBERG", coordinates: [-95, 30] } 
 ];

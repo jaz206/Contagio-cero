@@ -1,3 +1,4 @@
+
 export interface Coordinates {
   x: number;
   y: number;
@@ -67,4 +68,4 @@ export interface Hero {
   assignedMissionId?: string | null; // ID of the main map mission assigned to this hero
 }
 
-export type ViewMode = 'MAP' | 'BUNKER' | 'STORY';
+export type ViewMode = 'MAP' | 'BUNKER' | 'STORY' | 'LOGIN' | 'HOME';

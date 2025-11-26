@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, X, ShieldAlert, FileText, Terminal } from 'lucide-react';
 
@@ -24,13 +25,13 @@ const STORY_SCENES: Scene[] = [
   {
     id: 3,
     image: 'https://i.pinimg.com/1200x/99/80/1e/99801e7603e4a770127ce29530f13f87.jpg',
-    text: "Tres hombres se reunieron allí: Victor Von Doom, Magneto y Wilson Fisk. Tres egos tan grandes que apenas cabían en la misma habitación. Decidieron que la humanidad era demasiado caótica. Su solución fue el Pulso Nulificador. Necesitaban cuerpos para afinar la fórmula. Usaron a Jamie Madrox para ver cómo se multiplicaba la infección. Usaron a los Reavers para ver si el metal podía enfermar. Y funcionó.... Dios, cómo funcionó.",
+    text: "Tres hombres se reunieron allí: Victor Von Doom, Magneto y Wilson Fisk. Tres egos tan grandes que apenas cabían en la misma habitación. Decidieron que la humanidad era demasiado caótica. Su solución fue el Pulso Nulificador. Necesitaban cuerpos para afinar la fórmula.",
     caption: "LA TRÍADA DE LA ARROGANCIA"
   },
   {
     id: 4,
     image: 'https://i.pinimg.com/1200x/19/26/53/1926533335a2b27c4a79c9d2632ec83d.jpg',
-    text: "Necesitaban cuerpos para afinar la fórmula. Usaron a Jamie Madrox para ver cómo se multiplicaba la infección. Usaron a los Reavers para ver si el metal podía enfermar. Y funcionó. Dios, cómo funcionó.",
+    text: "Necesitaban cuerpos para afinar la fórmula. Usaron a Jamie Madrox para ver cómo se multiplicaba la infección. Usaron a los Reavers para ver si el metal podía enfermar. Y funcionó.... Dios, cómo funcionó.",
     caption: "EXPERIMENTOS CLASIFICADOS"
   },
   {

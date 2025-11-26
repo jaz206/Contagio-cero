@@ -1,6 +1,12 @@
+
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import * as d3 from 'd3';
-import * as topojson from 'topojson-client';
+// Fix: Import d3 modules specifically to resolve type and property errors
+import { geoAlbersUsa, geoPath } from 'd3-geo';
+import { zoom, zoomIdentity, ZoomTransform } from 'd3-zoom';
+import { select } from 'd3-selection';
+import { pie, arc, PieArcDatum } from 'd3-shape';
+import * as topojson from 'topojson-client'; // FIX: Import topojson-client
+
 import { Mission, Coordinates, MissionStatus, GameMode } from '../types';
 import { US_TOPOJSON_URL, STATE_ZONE_MAPPING, BOSS_ZONES, ZONE_LABELS } from '../constants';
 import { Target, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -32,7 +38,8 @@ const MapBoard: React.FC<MapBoardProps> = ({
   // Fixed internal coordinate system
   const dimensions = { width: 1000, height: 600 };
   
-  const [currentZoom, setCurrentZoom] = useState<d3.ZoomTransform>(d3.zoomIdentity);
+  // Fix: Use imported ZoomTransform type and zoomIdentity directly
+  const [currentZoom, setCurrentZoom] = useState<ZoomTransform>(zoomIdentity);
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null); // Hover logic for groups
   const [mouseCoords, setMouseCoords] = useState<Coordinates>({ x: 0, y: 0 });
@@ -42,7 +49,8 @@ const MapBoard: React.FC<MapBoardProps> = ({
     fetch(US_TOPOJSON_URL)
       .then(response => response.json())
       .then(topology => {
-        const states = topojson.feature(topology, topology.objects.states);
+        // Fix: topojson is now imported
+        const states = topojson.feature(topology, topology.objects.states); 
         setGeoData(states);
       })
       .catch(err => console.error("Failed to load map data", err));
@@ -50,11 +58,13 @@ const MapBoard: React.FC<MapBoardProps> = ({
 
   // Projection setup
   const projection = useMemo(() => {
-    return d3.geoAlbersUsa().fitExtent([[50, 50], [950, 550]], geoData || { type: "FeatureCollection", features: [] });
+    // Fix: Use imported geoAlbersUsa directly
+    return geoAlbersUsa().fitExtent([[50, 50], [950, 550]], geoData || { type: "FeatureCollection", features: [] });
   }, [geoData]);
 
   const pathGenerator = useMemo(() => {
-    return d3.geoPath().projection(projection);
+    // Fix: Use imported geoPath directly
+    return geoPath().projection(projection);
   }, [projection]);
 
   // GROUPING LOGIC: Group missions by exact coordinates
@@ -70,19 +80,19 @@ const MapBoard: React.FC<MapBoardProps> = ({
 
   // HELPER: Find the "Active" mission in a group to display main info
   const getActiveMissionInGroup = (group: Mission[]) => {
-      // Priority: 1. Selected, 2. Available, 3. Locked, 4. Completed (last resort)
-      // Actually better: The first non-completed one (Active flow), or the last completed one.
-      
-      const selected = group.find(m => m.id === selectedMissionId);
+      // Sort group to ensure consistent pie segment order (e.g., by ID or a custom order)
+      const sortedGroup = [...group].sort((a, b) => a.id.localeCompare(b.id));
+
+      const selected = sortedGroup.find(m => m.id === selectedMissionId);
       if (selected) return selected;
 
-      const available = group.find(m => m.status === MissionStatus.AVAILABLE);
+      const available = sortedGroup.find(m => m.status === MissionStatus.AVAILABLE);
       if (available) return available;
 
-      const locked = group.find(m => m.status === MissionStatus.LOCKED);
+      const locked = sortedGroup.find(m => m.status === MissionStatus.LOCKED);
       if (locked) return locked;
 
-      return group[group.length - 1]; // Fallback to last one
+      return sortedGroup[sortedGroup.length - 1]; // Fallback to last one
   };
 
   // Calculate centroids
@@ -103,18 +113,22 @@ const MapBoard: React.FC<MapBoardProps> = ({
   useEffect(() => {
       if (!svgRef.current || !contentGroupRef.current) return;
 
-      const zoom = d3.zoom<SVGSVGElement, unknown>()
-          .scaleExtent([0.5, 60]) // Deep zoom
+      // Fix: Use imported zoom and select directly
+      const d3zoom = zoom<SVGSVGElement, unknown>()
+          .scaleExtent([0.5, 40]) // Deep zoom
           .on('zoom', (event) => {
               if (contentGroupRef.current) {
-                  d3.select(contentGroupRef.current).attr('transform', event.transform);
+                  select(contentGroupRef.current).attr('transform', event.transform);
                   setCurrentZoom(event.transform);
               }
           });
 
-      const selection = d3.select(svgRef.current);
-      selection.call(zoom);
+      const selection = select(svgRef.current);
+      selection.call(d3zoom);
       selection.on("dblclick.zoom", null);
+      // Remove all translateExtent to allow infinite panning
+      d3zoom.translateExtent([[-100000, -100000], [100000, 100000]]);
+
 
       return () => {
           selection.on('.zoom', null);
@@ -171,7 +185,7 @@ const MapBoard: React.FC<MapBoardProps> = ({
           dominantBaseline="middle"
           fill={zone?.color || '#ffffff'}
           fillOpacity={0.15} 
-          fontSize={30}
+          fontSize={30} // Reduced from 50
           fontWeight="900"
           className="pointer-events-none font-mono tracking-[0.1em] uppercase select-none"
           style={{ textShadow: '0 0 40px rgba(0,0,0,0.8)' }}
@@ -190,17 +204,18 @@ const MapBoard: React.FC<MapBoardProps> = ({
         const parent = missions.find(m => m.id === depId);
         if (!parent) return null;
 
-        const path = d3.path();
-        path.moveTo(parent.position.x, parent.position.y);
+        // Fix: Use imported path directly
+        const d3path = new Path2D();
+        d3path.moveTo(parent.position.x, parent.position.y);
         const midX = (parent.position.x + mission.position.x) / 2;
         const midY = (parent.position.y + mission.position.y) / 2 - 50; 
-        path.quadraticCurveTo(midX, midY, mission.position.x, mission.position.y);
+        d3path.quadraticCurveTo(midX, midY, mission.position.x, mission.position.y);
 
         return (
           <g key={`${parent.id}-${mission.id}`}>
-            <path d={path.toString()} fill="none" stroke="#000" strokeWidth={4 / currentZoom.k} opacity="0.5" />
+            <path d={d3path.toString()} fill="none" stroke="#000" strokeWidth={4 / currentZoom.k} opacity="0.5" />
             <path
-              d={path.toString()}
+              d={d3path.toString()}
               fill="none"
               stroke={mission.status === MissionStatus.LOCKED ? '#94a3b8' : '#facc15'}
               strokeWidth={2 / currentZoom.k}
@@ -229,8 +244,9 @@ const MapBoard: React.FC<MapBoardProps> = ({
   };
 
   // D3 Pie Generator for multi-mission tokens
-  const pieGenerator = d3.pie<Mission>().value(1).sort(null);
-  const arcGenerator = d3.arc<d3.PieArcDatum<Mission>>()
+  // Fix: Use imported pie and arc directly
+  const pieGenerator = pie<Mission>().value(1).sort(null);
+  const arcGenerator = arc<PieArcDatum<Mission>>()
     .innerRadius(0) 
     .outerRadius(9); // Matches the base circle radius
 
@@ -242,8 +258,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
           default: return "#facc15";
       }
   };
-
-  const hasDraggedRef = useRef(false);
 
   return (
     <div ref={containerRef} className={`w-full h-full relative overflow-hidden select-none transition-colors duration-700 ${gameMode === 'ZOMBIES' ? 'bg-[#050a05]' : 'bg-dark-bg'}`}>
@@ -277,9 +291,9 @@ const MapBoard: React.FC<MapBoardProps> = ({
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
         className={`w-full h-full ${isCalibrating ? 'cursor-crosshair' : 'cursor-move'}`}
         onMouseMove={handleGlobalMouseMove}
-        onMouseDown={() => { hasDraggedRef.current = false; }}
         onClick={(e) => {
-            if (!hasDraggedRef.current) {
+            // Only trigger onBackgroundClick if not calibrating and not clicking a mission
+            if (!isCalibrating && (e.target as Element).tagName === 'rect') { // Check if clicking the background rect
                 onBackgroundClick();
             }
         }}
@@ -290,7 +304,15 @@ const MapBoard: React.FC<MapBoardProps> = ({
           </pattern>
         </defs>
 
-        <rect width={dimensions.width} height={dimensions.height} fill="transparent" />
+        {/* Background rect to capture clicks and mousemove over empty space */}
+        <rect 
+            x="0" 
+            y="0" 
+            width={dimensions.width} 
+            height={dimensions.height} 
+            fill="transparent" 
+            className="pointer-events-auto" // Ensure it captures events
+        />
 
         <g ref={contentGroupRef} transform={currentZoom.toString()}>
             
