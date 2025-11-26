@@ -20,7 +20,7 @@ const SCENES = [
   },
   {
     id: 3,
-    image: "https://i.pinimg.com/736x/cc/7b/7a/cc7b7ac72f381ef51ca0b7a5183ed3eb.jpg",
+    image: "https://i.pinimg.com/1200x/99/80/1e/99801e7603e4a770127ce29530f13f87.jpg",
     text: " Necesitaban cuerpos para afinar la fórmula. Usaron a mutantes y criminales para ver cómo se multiplicaba la infección.\nY funcionó. Dios, cómo funcionó."
   },
   {
@@ -30,17 +30,17 @@ const SCENES = [
   },
   {
     id: 5,
-    image: "https://i.pinimg.com/1200x/a8/e9/b7/a8e9b76d6a9a87de0cfba509d5fef534.jpg",
+    image: "https://i.pinimg.com/736x/cf/f1/de/cff1deef61e1fb966db87e788e70935b.jpg",
     text: "...lo que consiguieron fue una bomba biológica. Cuando el virus tocó la sangre gamma, no murió. Se enfureció.\nBanner no cayó. La cosa que despertó ya no tenía a nadie al volante."
   },
   {
     id: 6,
-    image: "https://i.pinimg.com/1200x/eb/db/e8/ebdbe8d5738acd105654dc8ddad8216f.jpg",
+    image: "https://i.pinimg.com/1200x/a8/e9/b7/a8e9b76d6a9a87de0cfba509d5fef534.jpg",
     text: "En cuestión de horas, Nueva York era un matadero. Los Vengadores cayeron primero, destrozados por los amigos que intentaban salvar.\nLos X-Men aguantaron un poco más, solo para ver cómo su escuela se convertía en un buffet."
   },
   {
     id: 7,
-    image: "https://via.placeholder.com/800x450/4c1d95/ffffff?text=LOS+TRONOS+DE+HUESO",
+    image: "https://i.pinimg.com/1200x/eb/db/e8/ebdbe8d5738acd105654dc8ddad8216f.jpg",
     text: "¿Y la Tríada? Doom, Magneto y Fisk no perdieron la mente. Sus cuerpos se pudrieron, pero su intelecto permaneció intacto.\nAhora se sientan en tronos de huesos, gobernando facciones de pesadilla."
   },
   {
