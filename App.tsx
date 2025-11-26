@@ -3,14 +3,15 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import MapBoard from './components/MapBoard';
 import ControlPanel from './components/ControlPanel';
 import Bunker from './components/Bunker';
-import { Mission, Coordinates, MissionStatus, GameMode, Hero } from './types';
+import StoryIntro from './components/StoryIntro';
+import { Mission, Coordinates, MissionStatus, GameMode, Hero, ViewMode } from './types';
 
 const App: React.FC = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const [stateLocations, setStateLocations] = useState<Record<string, Coordinates>>({});
   const [currentMode, setCurrentMode] = useState<GameMode>('HEROES');
-  const [viewMode, setViewMode] = useState<'MAP' | 'BUNKER'>('MAP');
+  const [viewMode, setViewMode] = useState<ViewMode>('MAP');
 
   const [heroes, setHeroes] = useState<Hero[]>([
     {
@@ -350,10 +351,16 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // VIEW ROUTING
   return (
     <div className="flex w-screen h-screen overflow-hidden bg-dark-bg">
       
-      {/* View Switcher Logic */}
+      {/* STORY MODE */}
+      {viewMode === 'STORY' && (
+        <StoryIntro onClose={() => setViewMode('MAP')} />
+      )}
+
+      {/* BUNKER MODE */}
       {viewMode === 'BUNKER' ? (
         <Bunker 
            heroes={heroes}
@@ -364,6 +371,7 @@ const App: React.FC = () => {
            onClose={() => setViewMode('MAP')}
         />
       ) : (
+        /* MAP MODE (Default) */
         <>
           <main className="flex-1 relative transition-colors duration-700">
             <MapBoard 
@@ -402,6 +410,7 @@ const App: React.FC = () => {
               currentMode={currentMode}
               onSetMode={handleModeChange}
               onToggleBunker={() => setViewMode('BUNKER')}
+              onOpenStory={() => setViewMode('STORY')}
               onExportGame={handleExportGame}
             />
           </aside>

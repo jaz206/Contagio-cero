@@ -66,3 +66,5 @@ export interface Hero {
   personalObjectives: PersonalObjective[];
   assignedMissionId?: string | null; // ID of the main map mission assigned to this hero
 }
+
+export type ViewMode = 'MAP' | 'BUNKER' | 'STORY';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mission, BossZone, MissionStatus, Objective, Coordinates, GameMode } from '../types';
 import { BOSS_ZONES, STATE_ZONE_MAPPING } from '../constants';
-import { Plus, Link as LinkIcon, Trash2, Check, BrainCircuit, Skull, X, List, Share2, Square, CheckSquare, AlertTriangle, ArrowLeft, ChevronRight, Lock, RotateCcw, MapPin, Shield, Biohazard, Warehouse, Download } from 'lucide-react';
+import { Plus, Link as LinkIcon, Trash2, Check, BrainCircuit, Skull, X, List, Share2, Square, CheckSquare, AlertTriangle, ArrowLeft, ChevronRight, Lock, RotateCcw, MapPin, Shield, Biohazard, Warehouse, Download, BookOpen } from 'lucide-react';
 import { generateMissionDetails } from '../services/geminiService';
 
 interface ControlPanelProps {
@@ -18,7 +18,8 @@ interface ControlPanelProps {
   currentMode: GameMode;
   onSetMode: (mode: GameMode) => void;
   onToggleBunker: () => void;
-  onExportGame: () => void; // New prop for exporting
+  onOpenStory: () => void; // New prop
+  onExportGame: () => void; 
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -35,6 +36,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   currentMode,
   onSetMode,
   onToggleBunker,
+  onOpenStory,
   onExportGame
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -189,6 +191,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </h1>
             
             <div className="flex gap-2">
+              <button 
+                onClick={onOpenStory}
+                className="p-1.5 bg-yellow-900/20 hover:bg-yellow-900/40 text-yellow-500 rounded border border-yellow-700/50 transition-colors"
+                title="Archivo S.H.I.E.L.D. (Historia)"
+              >
+                <BookOpen size={14} />
+              </button>
+
               <button 
                 onClick={onExportGame}
                 className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded border border-slate-700 transition-colors"
