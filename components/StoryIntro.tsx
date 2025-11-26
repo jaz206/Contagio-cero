@@ -45,12 +45,12 @@ const SCENES = [
   },
   {
     id: 8,
-    image: "https://via.placeholder.com/800x450/1e3a8a/ffffff?text=SHIELD+SIGUE+ACTIVO",
+    image: "https://i.pinimg.com/originals/b5/79/43/b5794321500237339759505300000735.jpg", // Reusing SHIELD/Hero image
     text: "Pero hay algo peor que los muertos. S.H.I.E.L.D. sigue activo.\nUna IA ciega, sorda y paranoica que ha decidido que la única forma de mantener el orden es eliminar todo lo que se mueva."
   },
   {
     id: 9,
-    image: "https://via.placeholder.com/800x450/000000/ffffff?text=TU+DESTINO",
+    image: "https://i.pinimg.com/1200x/18/99/ec/1899ec756f8731e015eb941d7122fbec.jpg", // Reusing destroyed city image
     text: "Así que aquí estás. De pie sobre las cenizas.\nA tu izquierda, los muertos marchan. A tu derecha, las máquinas apuntan sus láseres.\nYa no se trata de salvar el mundo. Se trata de ver quién queda en pie."
   }
 ];
@@ -164,7 +164,6 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
             key={scene.id}
             src={scene.image} 
             alt="Scene" 
-            // Changed from object-cover to object-contain and added styling for comic look
             className="w-full h-full object-contain max-w-6xl mx-auto animate-in fade-in zoom-in-105 duration-[2000ms] shadow-2xl"
          />
       </div>
