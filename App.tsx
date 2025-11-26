@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import MapBoard from './components/MapBoard';
 import ControlPanel from './components/ControlPanel';
@@ -72,7 +73,7 @@ const App: React.FC = () => {
               { id: 'obj-init-2', text: "Contactar con supervivientes", completed: true }
             ],
             zoneId: 0, 
-            position: { x: 500, y: 300 }, // Center
+            position: { x: 500, y: 300 }, // Center fixed coords
             status: MissionStatus.COMPLETED,
             dependencies: [],
             locationState: "Nebraska",
@@ -103,7 +104,7 @@ const App: React.FC = () => {
               { id: 'k-2', text: "Todos debéis sobrevivir", completed: false }
             ],
             zoneId: 3, // Kingpin
-            position: { x: 821, y: 174 }, // Updated coordinates
+            position: { x: 821, y: 174 }, // Fixed coordinates
             status: MissionStatus.AVAILABLE,
             dependencies: [],
             locationState: "New York",
@@ -119,20 +120,74 @@ const App: React.FC = () => {
                 { id: 'm-2', text: "Localizar 'La Cámara'", completed: false }
             ],
             zoneId: 3,
-            position: { x: 857, y: 216 }, // Updated coordinates
+            position: { x: 857, y: 216 }, // Fixed coordinates
             status: MissionStatus.LOCKED,
             dependencies: ['kraven-hunt'],
             locationState: "New York",
             gameMode: 'HEROES'
         };
 
-        setMissions([bunkerHero, bunkerZombie, kravenMission, meatMission]);
+        const fiskMission: Mission = {
+            id: 'fisk-territory',
+            title: 'TERRITORIO FISK',
+            description: "El héroe rescatado en la prisión no os dio un mapa. Os dio la entrada al territorio real de Kingpin. Su Mansión no está a la vista. La protege un barrio fantasma lleno de vigilancia silenciosa. Si desactiváis su red de vigilancia, podréis acceder al único punto débil que oculta: una tapa de alcantarilla privada que lleva al patio interior de la Mansión.",
+            objectives: [
+                { id: 'f-1', text: "Romper el Cerco: Desactiva los 3 Nodos de Vigilancia", completed: false },
+                { id: 'f-2', text: "Puerta Trasera: Accede a la entrada subterránea", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 854, y: 222 }, // Same coordinates as vestibulo/kingpin
+            status: MissionStatus.LOCKED,
+            dependencies: ['meat-sleeps'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
+
+        const vestibuloMission: Mission = {
+            id: 'vestibulo-condenados',
+            title: 'EL VESTÍBULO DE LOS CONDENADOS',
+            description: "Salís desde las alcantarillas privadas de Fisk al patio interior de su Mansión. El silencio es absoluto. El vestíbulo no es una entrada: es un filtro. Y Misterio es su guardián. Solo cuando lo derribéis de forma definitiva obtendréis la tarjeta que activa el ascensor.",
+            objectives: [
+                { id: 'v-1', text: "Derrotar a Misterio y obtener la Tarjeta de Acceso", completed: false },
+                { id: 'v-2', text: "Acceder al ascensor antes de que se active la seguridad", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 854, y: 222 }, // Same coordinates
+            status: MissionStatus.LOCKED,
+            dependencies: ['fisk-territory'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
+
+        const kingpinBossMission: Mission = {
+            id: 'lord-kingpin',
+            title: 'LORD KINGPIN',
+            description: "El ascensor privado se detiene en el ático. Las puertas se abren. Wilson Fisk no huye. Os espera sentado tras su escritorio de caoba, limpiando la sangre de sus nudillos. 'Bienvenidos al final del mundo civilizado', dice. Ya no es solo un mafioso; es el Rey del nuevo orden. Derrotadlo y cortad la cabeza de la serpiente.",
+            objectives: [
+                { id: 'kp-1', text: "Derrotar a Wilson Fisk (Lord Kingpin)", completed: false },
+                { id: 'kp-2', text: "Recuperar el control de Nueva York", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 854, y: 222 }, // Same coordinates
+            status: MissionStatus.LOCKED,
+            dependencies: ['vestibulo-condenados'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
+
+        setMissions([bunkerHero, bunkerZombie, kravenMission, meatMission, fiskMission, vestibuloMission, kingpinBossMission]);
     }
   }, []);
 
-  // Filter missions based on active mode
+  // Filter missions based on active active mode AND visibility rules (Fog of War)
   const visibleMissions = useMemo(() => 
-    missions.filter(m => m.gameMode === currentMode), 
+    missions.filter(m => 
+        // 1. Must match current game mode (Heroes vs Zombies)
+        m.gameMode === currentMode && 
+        // 2. Must NOT be locked. Only Available or Completed missions are shown on the map.
+        // This creates the "Fog of War" effect where future connected tokens are invisible.
+        m.status !== MissionStatus.LOCKED
+    ), 
   [missions, currentMode]);
 
   // Handle Mode Switching
@@ -312,7 +367,7 @@ const App: React.FC = () => {
         <>
           <main className="flex-1 relative transition-colors duration-700">
             <MapBoard 
-              missions={visibleMissions} // Only pass filtered missions
+              missions={visibleMissions} // Only pass filtered missions (Available/Completed)
               selectedMissionId={selectedMissionId}
               onMissionMove={handleMissionMove}
               onMissionSelect={handleMissionSelect}

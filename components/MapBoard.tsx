@@ -34,7 +34,7 @@ const MapBoard: React.FC<MapBoardProps> = ({
   
   const [currentZoom, setCurrentZoom] = useState<d3.ZoomTransform>(d3.zoomIdentity);
   const [isCalibrating, setIsCalibrating] = useState(false);
-  const [hoveredMissionId, setHoveredMissionId] = useState<string | null>(null);
+  const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null); // Hover logic for groups
   const [mouseCoords, setMouseCoords] = useState<Coordinates>({ x: 0, y: 0 });
 
   // Load Map Data
@@ -50,13 +50,40 @@ const MapBoard: React.FC<MapBoardProps> = ({
 
   // Projection setup
   const projection = useMemo(() => {
-    // fitExtent with padding ensures map is centered and doesn't touch edges
     return d3.geoAlbersUsa().fitExtent([[50, 50], [950, 550]], geoData || { type: "FeatureCollection", features: [] });
   }, [geoData]);
 
   const pathGenerator = useMemo(() => {
     return d3.geoPath().projection(projection);
   }, [projection]);
+
+  // GROUPING LOGIC: Group missions by exact coordinates
+  const groupedMissions = useMemo(() => {
+    const groups: Record<string, Mission[]> = {};
+    missions.forEach(m => {
+        const key = `${m.position.x.toFixed(1)},${m.position.y.toFixed(1)}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(m);
+    });
+    return Object.values(groups);
+  }, [missions]);
+
+  // HELPER: Find the "Active" mission in a group to display main info
+  const getActiveMissionInGroup = (group: Mission[]) => {
+      // Priority: 1. Selected, 2. Available, 3. Locked, 4. Completed (last resort)
+      // Actually better: The first non-completed one (Active flow), or the last completed one.
+      
+      const selected = group.find(m => m.id === selectedMissionId);
+      if (selected) return selected;
+
+      const available = group.find(m => m.status === MissionStatus.AVAILABLE);
+      if (available) return available;
+
+      const locked = group.find(m => m.status === MissionStatus.LOCKED);
+      if (locked) return locked;
+
+      return group[group.length - 1]; // Fallback to last one
+  };
 
   // Calculate centroids
   useEffect(() => {
@@ -77,8 +104,7 @@ const MapBoard: React.FC<MapBoardProps> = ({
       if (!svgRef.current || !contentGroupRef.current) return;
 
       const zoom = d3.zoom<SVGSVGElement, unknown>()
-          .scaleExtent([0.5, 40]) // Allow deep zoom (up to 40x) and slight zoom out (0.5x)
-          // Removed translateExtent to prevent blocking
+          .scaleExtent([0.5, 60]) // Deep zoom
           .on('zoom', (event) => {
               if (contentGroupRef.current) {
                   d3.select(contentGroupRef.current).attr('transform', event.transform);
@@ -95,7 +121,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
       };
   }, []);
 
-  // Helper to get Color by Zone
   const getStateColor = (stateName: string) => {
     const zoneId = STATE_ZONE_MAPPING[stateName];
     const zone = BOSS_ZONES.find(z => z.id === zoneId);
@@ -106,7 +131,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
     return zone ? zone.color : '#334155'; 
   };
 
-  // Render State Names
   const renderStateLabels = () => {
       if (!geoData) return null;
       return geoData.features.map((feature: any, i: number) => {
@@ -121,7 +145,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
                   textAnchor="middle"
                   fill="rgba(255,255,255,0.6)"
                   fontSize={10} 
-                  // Counter-scale font so it stays readable but doesn't get massive when zooming in
                   transform={`scale(${1/Math.sqrt(Math.max(1, currentZoom.k))})`}
                   style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                   className="pointer-events-none font-mono uppercase tracking-widest select-none"
@@ -148,7 +171,7 @@ const MapBoard: React.FC<MapBoardProps> = ({
           dominantBaseline="middle"
           fill={zone?.color || '#ffffff'}
           fillOpacity={0.15} 
-          fontSize={50}
+          fontSize={30}
           fontWeight="900"
           className="pointer-events-none font-mono tracking-[0.1em] uppercase select-none"
           style={{ textShadow: '0 0 40px rgba(0,0,0,0.8)' }}
@@ -189,9 +212,7 @@ const MapBoard: React.FC<MapBoardProps> = ({
     );
   };
 
-  // Track mouse coordinates for calibration
   const handleGlobalMouseMove = (e: React.MouseEvent) => {
-      // Always track coordinates if calibrating
       if (isCalibrating) {
           const rect = svgRef.current?.getBoundingClientRect();
           if (!rect) return;
@@ -207,13 +228,27 @@ const MapBoard: React.FC<MapBoardProps> = ({
       }
   };
 
-  // Detect Drag vs Click for Mission Selection
+  // D3 Pie Generator for multi-mission tokens
+  const pieGenerator = d3.pie<Mission>().value(1).sort(null);
+  const arcGenerator = d3.arc<d3.PieArcDatum<Mission>>()
+    .innerRadius(0) 
+    .outerRadius(9); // Matches the base circle radius
+
+  const getMissionColor = (status: MissionStatus) => {
+      switch (status) {
+          case MissionStatus.COMPLETED: return "#10b981"; // green-500
+          case MissionStatus.AVAILABLE: return "#facc15"; // yellow-400
+          case MissionStatus.LOCKED: return "#64748b"; // slate-500
+          default: return "#facc15";
+      }
+  };
+
   const hasDraggedRef = useRef(false);
 
   return (
     <div ref={containerRef} className={`w-full h-full relative overflow-hidden select-none transition-colors duration-700 ${gameMode === 'ZOMBIES' ? 'bg-[#050a05]' : 'bg-dark-bg'}`}>
       
-      {/* Calibration Controls */}
+      {/* Calibration Info */}
       <div className="absolute top-20 right-4 z-50 flex flex-col gap-2 items-end">
         <button 
             onClick={() => setIsCalibrating(!isCalibrating)}
@@ -221,7 +256,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
         >
             {isCalibrating ? '🔧 CALIBRANDO...' : '🔧 CALIBRAR'}
         </button>
-        
         {isCalibrating && (
              <div className="bg-slate-900/90 border border-cyan-500/50 rounded p-2 text-cyan-400 font-mono text-xs shadow-lg backdrop-blur-sm">
                  <div className="flex gap-4">
@@ -232,7 +266,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
         )}
       </div>
 
-      {/* Loading State */}
       {!geoData && (
           <div className="absolute inset-0 flex items-center justify-center text-slate-500 font-mono text-sm animate-pulse">
               Inicializando Satélites...
@@ -246,7 +279,6 @@ const MapBoard: React.FC<MapBoardProps> = ({
         onMouseMove={handleGlobalMouseMove}
         onMouseDown={() => { hasDraggedRef.current = false; }}
         onClick={(e) => {
-            // Only trigger background click if we haven't dragged significantly
             if (!hasDraggedRef.current) {
                 onBackgroundClick();
             }
@@ -258,12 +290,10 @@ const MapBoard: React.FC<MapBoardProps> = ({
           </pattern>
         </defs>
 
-        {/* Ghost Rect to catch all mouse events for Zooming/Panning even on empty space */}
         <rect width={dimensions.width} height={dimensions.height} fill="transparent" />
 
         <g ref={contentGroupRef} transform={currentZoom.toString()}>
             
-            {/* Map Layer */}
             <g className="opacity-80 transition-all duration-700">
             {geoData && geoData.features.map((feature: any, i: number) => (
                 <path
@@ -276,124 +306,123 @@ const MapBoard: React.FC<MapBoardProps> = ({
                 fillOpacity={gameMode === 'ZOMBIES' ? "0.15" : "0.2"}
                 />
             ))}
-            {geoData && (
-                <path 
-                d={pathGenerator(geoData) || ''} 
-                fill={gameMode === 'ZOMBIES' ? "url(#hatch)" : "none"}
-                stroke={gameMode === 'ZOMBIES' ? '#4ade80' : '#3b82f6'}
-                strokeWidth={0.5 / currentZoom.k} 
-                opacity="0.3"
-                />
-            )}
             </g>
 
             <g>{renderZoneWatermarks()}</g>
             <g>{renderStateLabels()}</g>
             {renderConnections()}
 
-            {/* Tokens Layer */}
-            {missions.map((mission) => {
-                const isSelected = selectedMissionId === mission.id;
-                const isHovered = hoveredMissionId === mission.id;
-                let Icon = AlertTriangle;
-                let color = "text-yellow-400";
-                let ringColor = "stroke-yellow-400";
-                let dotFill = "#facc15"; // yellow-400
-
-                if(mission.status === MissionStatus.COMPLETED) {
-                    Icon = CheckCircle;
-                    color = "text-green-500";
-                    ringColor = "stroke-green-500";
-                    dotFill = "#10b981"; // green-500
-                } else if (mission.status === MissionStatus.LOCKED) {
-                    Icon = Lock;
-                    color = "text-slate-500";
-                    ringColor = "stroke-slate-500";
-                    dotFill = "#64748b"; // slate-500
-                } else {
-                    Icon = Target;
-                }
-
-                // LEVEL OF DETAIL LOGIC
-                // If zoom is less than 2.5, show simple DOT
+            {/* TOKENS LAYER: Grouped */}
+            {groupedMissions.map((group, index) => {
+                const activeMission = getActiveMissionInGroup(group);
+                const isSelected = group.some(m => m.id === selectedMissionId);
+                const isHovered = hoveredGroupId === activeMission.id;
                 const showDetail = currentZoom.k > 2.5;
+
+                // Determine Icon
+                let Icon = AlertTriangle;
+                if(activeMission.status === MissionStatus.COMPLETED) Icon = CheckCircle;
+                else if (activeMission.status === MissionStatus.LOCKED) Icon = Lock;
+                else Icon = Target;
+
+                const isGroup = group.length > 1;
+                const arcs = isGroup ? pieGenerator(group) : [];
 
                 return (
                     <g
-                    key={mission.id}
-                    transform={`translate(${mission.position.x}, ${mission.position.y})`}
-                    className="cursor-pointer"
-                    onMouseEnter={() => setHoveredMissionId(mission.id)}
-                    onMouseLeave={() => setHoveredMissionId(null)}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // Click logic: only select if not dragging map
-                        onMissionSelect(mission.id);
-                    }} 
+                        key={`group-${index}`}
+                        transform={`translate(${activeMission.position.x}, ${activeMission.position.y})`}
+                        className="cursor-pointer"
+                        onMouseEnter={() => setHoveredGroupId(activeMission.id)}
+                        onMouseLeave={() => setHoveredGroupId(null)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // Select the active mission in the group
+                            onMissionSelect(activeMission.id);
+                        }}
                     >
-                    
-                    {showDetail ? (
-                        // FULL TOKEN VIEW (Zoomed In)
-                        <g transform={`scale(${1 / Math.sqrt(currentZoom.k)})`}>
-                            {isSelected && (
-                                <circle r="26" fill="none" stroke="white" strokeWidth="2" strokeDasharray="4 2" className="animate-spin-slow origin-center" />
-                            )}
-                            <circle 
-                                r="20" 
-                                fill="#0f172a" 
-                                strokeWidth="3" 
-                                className={`${ringColor} hover:stroke-white transition-colors duration-200`} 
-                                stroke="currentColor" 
-                            />
-                            <foreignObject x="-12" y="-12" width="24" height="24" className="pointer-events-none">
-                                <div className={`flex items-center justify-center w-full h-full ${color}`}>
-                                    <Icon size={24} />
-                                </div>
-                            </foreignObject>
-                            <text
-                                y="40"
-                                textAnchor="middle"
-                                fill="white"
-                                fontSize="14"
-                                fontFamily="Chakra Petch"
-                                className="drop-shadow-md bg-black/50 pointer-events-none"
-                                style={{ textShadow: '2px 2px 2px #000' }}
-                            >
-                                {mission.title}
-                            </text>
-                        </g>
-                    ) : (
-                        // DOT VIEW (Zoomed Out)
-                        <g>
-                             {/* Larger invisible hit area for easier clicking */}
-                             <circle r={10 / currentZoom.k} fill="transparent" />
-                             {/* Visible dot */}
-                             <circle 
-                                r={5 / Math.sqrt(currentZoom.k)} 
-                                fill={dotFill} 
-                                stroke="#0f172a"
-                                strokeWidth={1 / currentZoom.k}
-                                className="transition-transform duration-200 hover:scale-150"
-                             />
-                             {/* Hover Title in Dot Mode */}
-                             {isHovered && (
-                                 <g transform={`scale(${1 / Math.sqrt(currentZoom.k)})`}>
-                                     <rect x={-(mission.title.length * 3.5)} y="-28" width={mission.title.length * 7} height="16" rx="2" fill="rgba(0,0,0,0.8)" />
-                                     <text
-                                         y="-16"
-                                         textAnchor="middle"
-                                         fill="white"
-                                         fontSize="10"
-                                         fontFamily="Chakra Petch"
-                                         fontWeight="bold"
-                                         className="pointer-events-none drop-shadow-md"
-                                     >
-                                         {mission.title}
-                                     </text>
-                                 </g>
-                             )}
-                        </g>
-                    )}
+                        {showDetail ? (
+                            // DETAILED VIEW (Zoomed In)
+                            <g transform={`scale(${1 / Math.sqrt(currentZoom.k)})`}>
+                                {/* Selection Ring */}
+                                {isSelected && (
+                                    <circle r="13" fill="none" stroke="white" strokeWidth="1.5" strokeDasharray="3 1.5" className="animate-spin-slow origin-center" />
+                                )}
+                                
+                                {/* Group (Pie) or Single Token */}
+                                {isGroup ? (
+                                    <g>
+                                        <circle r="9" fill="#0f172a" stroke="none" />
+                                        {arcs.map((arc, i) => (
+                                            <path 
+                                                key={i} 
+                                                d={arcGenerator(arc) || ''} 
+                                                fill={getMissionColor(arc.data.status)} 
+                                                stroke="#0f172a" 
+                                                strokeWidth="1"
+                                                className="transition-colors"
+                                            />
+                                        ))}
+                                    </g>
+                                ) : (
+                                    <circle 
+                                        r="9" 
+                                        fill="#0f172a" 
+                                        strokeWidth="1.5" 
+                                        stroke={getMissionColor(activeMission.status)} 
+                                        className="hover:stroke-white transition-colors duration-200"
+                                    />
+                                )}
+
+                                {/* Icon Overlay */}
+                                <foreignObject x="-5" y="-5" width="10" height="10" className="pointer-events-none">
+                                    <div className={`flex items-center justify-center w-full h-full text-white drop-shadow-md`}>
+                                        <Icon size={10} strokeWidth={2.5} />
+                                    </div>
+                                </foreignObject>
+
+                                {/* Title Label */}
+                                <text
+                                    y="16"
+                                    textAnchor="middle"
+                                    fill="white"
+                                    fontSize="6"
+                                    fontFamily="Chakra Petch"
+                                    className="drop-shadow-md bg-black/50 pointer-events-none"
+                                    style={{ textShadow: '1px 1px 1px #000' }}
+                                >
+                                    {isGroup ? `${activeMission.title} (+${group.length-1})` : activeMission.title}
+                                </text>
+                            </g>
+                        ) : (
+                             // DOT VIEW (Zoomed Out)
+                            <g>
+                                <circle r={10 / currentZoom.k} fill="transparent" />
+                                <circle 
+                                    r={5 / Math.sqrt(currentZoom.k)} 
+                                    fill={getMissionColor(activeMission.status)} 
+                                    stroke="#0f172a"
+                                    strokeWidth={1 / currentZoom.k}
+                                    className="transition-transform duration-200 hover:scale-150"
+                                />
+                                {isHovered && (
+                                    <g transform={`scale(${1 / Math.sqrt(currentZoom.k)})`}>
+                                        <rect x={-(activeMission.title.length * 3.5)} y="-28" width={activeMission.title.length * 7} height="16" rx="2" fill="rgba(0,0,0,0.8)" />
+                                        <text
+                                            y="-16"
+                                            textAnchor="middle"
+                                            fill="white"
+                                            fontSize="10"
+                                            fontFamily="Chakra Petch"
+                                            fontWeight="bold"
+                                            className="pointer-events-none drop-shadow-md"
+                                        >
+                                            {activeMission.title} {isGroup && "(Grupo)"}
+                                        </text>
+                                    </g>
+                                )}
+                            </g>
+                        )}
                     </g>
                 );
             })}
