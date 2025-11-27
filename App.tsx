@@ -1,17 +1,21 @@
+
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import MapBoard from './components/MapBoard';
 import ControlPanel from './components/ControlPanel';
 import Bunker from './components/Bunker';
 import StoryIntro from './components/StoryIntro';
-import LoginPage from './components/LoginPage'; 
-import HomePage from './components/HomePage'; 
-import { Mission, Coordinates, MissionStatus, GameMode, Hero, ViewMode, GameState } from './types';
-import { User } from 'firebase/auth'; 
-import { loginWithGoogle, logout, onAuthStateChanged, saveGameToCloud, loadGameFromCloud } from './services/firebase';
-
+import LoginPage from './components/LoginPage'; // Import LoginPage
+import HomePage from './components/HomePage'; // Import HomePage
+import { Mission, Coordinates, MissionStatus, GameMode, Hero, ViewMode } from './types';
 
 const App: React.FC = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
+  const [stateLocations, setStateLocations] = useState<Record<string, Coordinates>>({});
+  const [currentMode, setCurrentMode] = useState<GameMode>('HEROES');
+  const [viewMode, setViewMode] = useState<ViewMode>('LOGIN'); // Start in LOGIN view
+
   const [heroes, setHeroes] = useState<Hero[]>([
     {
       id: 'spiderman',
@@ -59,166 +63,125 @@ const App: React.FC = () => {
       personalObjectives: []
     }
   ]);
-  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
-  const [stateLocations, setStateLocations] = useState<Record<string, Coordinates>>({});
-  const [currentMode, setCurrentMode] = useState<GameMode>('HEROES');
-  const [viewMode, setViewMode] = useState<ViewMode>('LOGIN'); // Start in LOGIN view
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // For Firebase auth loading
 
-  // --- Firebase Auth & Data Management ---
+  // Initialize with "El Nido" bunker
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        // If user logs in, try to load their game state
-        try {
-          const savedState = await loadGameFromCloud(currentUser.uid);
-          if (savedState) {
-            setMissions(savedState.missions || []);
-            setHeroes(savedState.heroes || []); // Load heroes from saved state
-            setCurrentMode(savedState.gameMode || 'HEROES');
-            console.log("Game state loaded from cloud.");
-          } else {
-            console.log("No saved game found, initializing default missions.");
-            initializeDefaultMissions(); // Initialize default if no cloud save
-          }
-        } catch (error) {
-          console.error("Error loading game from cloud:", error);
-          initializeDefaultMissions(); // Fallback to default missions on error
-        }
-        setViewMode('HOME'); // Go to home page after login/load
-      } else {
-        initializeDefaultMissions(); // Always initialize default if no user, for fresh start or non-logged-in access
-        setViewMode('LOGIN'); // Always go to login if no user
-      }
-      setIsLoading(false); // Auth loading is complete
-    });
+    // Check if we already have missions (to avoid double init in strict mode)
+    if (missions.length === 0) {
+        const bunkerHero: Mission = {
+            id: 'bunker-alpha',
+            title: 'BÚNKER: EL NIDO (Héroes)',
+            description: 'Base de operaciones de la Resistencia. Frontera Kingpin/Tierra de Nadie.',
+            objectives: [
+              { id: 'obj-init-1', text: "Establecer perímetro seguro", completed: true },
+              { id: 'obj-init-2', text: "Contactar con supervivientes", completed: true }
+            ],
+            zoneId: 0, 
+            position: { x: 500, y: 300 }, // Center fixed coords
+            status: MissionStatus.COMPLETED,
+            dependencies: [],
+            locationState: "Nebraska",
+            gameMode: 'HEROES'
+        };
 
-    return () => unsubscribe();
-  }, [initializeDefaultMissions]); // Add initializeDefaultMissions to dependencies
+        const bunkerZombie: Mission = {
+            id: 'patient-zero',
+            title: 'ZONA CERO: INFECCIÓN',
+            description: 'Primer brote masivo en las ruinas de la ciudad.',
+            objectives: [
+              { id: 'z-1', text: "Sobrevivir a la horda inicial", completed: true },
+            ],
+            zoneId: 2, // Hulk territory (The Wasteland)
+            position: { x: 670, y: 220 }, // Chicago area fixed coords
+            status: MissionStatus.COMPLETED,
+            dependencies: [],
+            locationState: "Illinois",
+            gameMode: 'ZOMBIES'
+        };
 
-  // Default Missions Initialization (moved to a function)
-  const initializeDefaultMissions = useCallback(() => {
-    // Only initialize if missions array is empty (first load or no cloud save)
-    // and only if not already loaded
-    if (missions.length === 0 && !sessionStorage.getItem('missions_initialized')) { 
-      const bunkerHero: Mission = {
-          id: 'bunker-alpha',
-          title: 'BÚNKER: EL NIDO (Héroes)',
-          description: 'Base de operaciones de la Resistencia. Frontera Kingpin/Tierra de Nadie.',
-          objectives: [
-            { id: 'obj-init-1', text: "Establecer perímetro seguro", completed: true },
-            { id: 'obj-init-2', text: "Contactar con supervivientes", completed: true }
-          ],
-          zoneId: 0, 
-          position: { x: 500, y: 300 }, // Center fixed coords
-          status: MissionStatus.COMPLETED,
-          dependencies: [],
-          locationState: "Nebraska",
-          gameMode: 'HEROES'
-      };
+        const kravenMission: Mission = {
+            id: 'kraven-hunt',
+            title: 'LA CAZA MAYOR DE KRAVEN',
+            description: "No hay órdenes. Solo el rastro de los gritos y la desesperación. Kraven el Cazador ha marcado estas ruinas como su coto de caza. Debéis evacuar a un mínimo de 5 supervivientes por el Metro.",
+            objectives: [
+              { id: 'k-1', text: "¡Deten la caceria!", completed: false },
+              { id: 'k-2', text: "Todos debéis sobrevivir", completed: false }
+            ],
+            zoneId: 3, // Kingpin
+            position: { x: 821, y: 174 }, // Fixed coordinates
+            status: MissionStatus.AVAILABLE,
+            dependencies: [],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
 
-      const bunkerZombie: Mission = {
-          id: 'patient-zero',
-          title: 'ZONA CERO: INFECCIÓN',
-          description: 'Primer brote masivo en las ruinas de la ciudad.',
-          objectives: [
-            { id: 'z-1', text: "Sobrevivir a la horda inicial", completed: true },
-          ],
-          zoneId: 2, // Hulk territory (The Wasteland)
-          position: { x: 670, y: 220 }, // Chicago area fixed coords
-          status: MissionStatus.COMPLETED,
-          dependencies: [],
-          locationState: "Illinois",
-          gameMode: 'ZOMBIES'
-      };
+        const meatMission: Mission = {
+            id: 'meat-sleeps',
+            title: 'DONDE LA CARNE DUERME',
+            description: "El Metro quedó atrás. Un técnico murmuraba sobre camiones y un viejo penal en el este. Fisk guarda algo allí que no quiere que nadie vea. Si el rumor es cierto, dentro hallaréis más que respuestas.",
+            objectives: [
+                { id: 'm-1', text: "Investigar el penal abandonado", completed: false },
+                { id: 'm-2', text: "Localizar 'La Cámara'", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 857, y: 216 }, // Fixed coordinates
+            status: MissionStatus.LOCKED,
+            dependencies: ['kraven-hunt'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
 
-      const kravenMission: Mission = {
-          id: 'kraven-hunt',
-          title: 'LA CAZA MAYOR DE KRAVEN',
-          description: "No hay órdenes. Solo el rastro de los gritos y la desesperación. Kraven el Cazador ha marcado estas ruinas como su coto de caza. Debéis evacuar a un mínimo de 5 supervivientes por el Metro.",
-          objectives: [
-            { id: 'k-1', text: "¡Deten la caceria!", completed: false },
-            { id: 'k-2', text: "Todos debéis sobrevivir", completed: false }
-          ],
-          zoneId: 3, // Kingpin
-          position: { x: 821, y: 174 }, // Fixed coordinates
-          status: MissionStatus.AVAILABLE,
-          dependencies: [],
-          locationState: "New York",
-          gameMode: 'HEROES'
-      };
+        const fiskMission: Mission = {
+            id: 'fisk-territory',
+            title: 'TERRITORIO FISK',
+            description: "El héroe rescatado en la prisión no os dio un mapa. Os dio la entrada al territorio real de Kingpin. Su Mansión no está a la vista. La protege un barrio fantasma lleno de vigilancia silenciosa. Si desactiváis su red de vigilancia, podréis acceder al único punto débil que oculta: una tapa de alcantarilla privada que lleva al patio interior de la Mansión.",
+            objectives: [
+                { id: 'f-1', text: "Romper el Cerco: Desactiva los 3 Nodos de Vigilancia", completed: false },
+                { id: 'f-2', text: "Puerta Trasera: Accede a la entrada subterránea", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 854, y: 222 }, // Same coordinates as vestibulo/kingpin
+            status: MissionStatus.LOCKED,
+            dependencies: ['meat-sleeps'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
 
-      const meatMission: Mission = {
-          id: 'meat-sleeps',
-          title: 'DONDE LA CARNE DUERME',
-          description: "El Metro quedó atrás. Un técnico murmuraba sobre camiones y un viejo penal en el este. Fisk guarda algo allí que no quiere que nadie vea. Si el rumor es cierto, dentro hallaréis más que respuestas.",
-          objectives: [
-              { id: 'm-1', text: "Investigar el penal abandonado", completed: false },
-              { id: 'm-2', text: "Localizar 'La Cámara'", completed: false }
-          ],
-          zoneId: 3,
-          position: { x: 857, y: 216 }, // Fixed coordinates
-          status: MissionStatus.LOCKED,
-          dependencies: ['kraven-hunt'],
-          locationState: "New York",
-          gameMode: 'HEROES'
-      };
+        const vestibuloMission: Mission = {
+            id: 'vestibulo-condenados',
+            title: 'EL VESTÍBULO DE LOS CONDENADOS',
+            description: "Salís desde las alcantarillas privadas de Fisk al patio interior de su Mansión. El silencio es absoluto. El vestíbulo no es una entrada: es un filtro. Y Misterio es su guardián. Solo cuando lo derribéis de forma definitiva obtendréis la tarjeta que activa el ascensor.",
+            objectives: [
+                { id: 'v-1', text: "Derrotar a Misterio y obtener la Tarjeta de Acceso", completed: false },
+                { id: 'v-2', text: "Acceder al ascensor antes de que se active la seguridad", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 854, y: 222 }, // Same coordinates
+            status: MissionStatus.LOCKED,
+            dependencies: ['fisk-territory'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
 
-      const fiskMission: Mission = {
-          id: 'fisk-territory',
-          title: 'TERRITORIO FISK',
-          description: "El héroe rescatado en la prisión no os dio un mapa. Os dio la entrada al territorio real de Kingpin. Su Mansión no está a la vista. La protege un barrio fantasma lleno de vigilancia silenciosa. Si desactiváis su red de vigilancia, podréis acceder al único punto débil que oculta: una tapa de alcantarilla privada que lleva al patio interior de la Mansión.",
-          objectives: [
-              { id: 'f-1', text: "Romper el Cerco: Desactiva los 3 Nodos de Vigilancia", completed: false },
-              { id: 'f-2', text: "Puerta Trasera: Accede a la entrada subterránea", completed: false }
-          ],
-          zoneId: 3,
-          position: { x: 854, y: 222 }, // Same coordinates as vestibulo/kingpin
-          status: MissionStatus.LOCKED,
-          dependencies: ['meat-sleeps'],
-          locationState: "New York",
-          gameMode: 'HEROES'
-      };
+        const kingpinBossMission: Mission = {
+            id: 'lord-kingpin',
+            title: 'LORD KINGPIN',
+            description: "El ascensor privado se detiene en el ático. Las puertas se abren. Wilson Fisk no huye. Os espera sentado tras su escritorio de caoba, limpiando la sangre de sus nudillos. 'Bienvenidos al final del mundo civilizado', dice. Ya no es solo un mafioso; es el Rey del nuevo orden. Derrotadlo y cortad la cabeza de la serpiente.",
+            objectives: [
+                { id: 'kp-1', text: "Derrotar a Wilson Fisk (Lord Kingpin)", completed: false },
+                { id: 'kp-2', text: "Recuperar el control de Nueva York", completed: false }
+            ],
+            zoneId: 3,
+            position: { x: 854, y: 222 }, // Same coordinates
+            status: MissionStatus.LOCKED,
+            dependencies: ['vestibulo-condenados'],
+            locationState: "New York",
+            gameMode: 'HEROES'
+        };
 
-      const vestibuloMission: Mission = {
-          id: 'vestibulo-condenados',
-          title: 'EL VESTÍBULO DE LOS CONDENADOS',
-          description: "Salís desde las alcantarillas privadas de Fisk al patio interior de su Mansión. El silencio es absoluto. El vestíbulo no es una entrada: es un filtro. Y Misterio es su guardián. Solo cuando lo derribéis de forma definitiva obtendréis la tarjeta que activa el ascensor.",
-          objectives: [
-              { id: 'v-1', text: "Derrotar a Misterio y obtener la Tarjeta de Acceso", completed: false },
-              { id: 'v-2', text: "Acceder al ascensor antes de que se active la seguridad", completed: false }
-          ],
-          zoneId: 3,
-          position: { x: 854, y: 222 }, // Same coordinates
-          status: MissionStatus.LOCKED,
-          dependencies: ['fisk-territory'],
-          locationState: "New York",
-          gameMode: 'HEROES'
-      };
-
-      const kingpinBossMission: Mission = {
-          id: 'lord-kingpin',
-          title: 'LORD KINGPIN',
-          description: "El ascensor privado se detiene en el ático. Las puertas se abren. Wilson Fisk no huye. Os espera sentado tras su escritorio de caoba, limpiando la sangre de sus nudillos. 'Bienvenidos al final del mundo civilizado', dice. Ya no es solo un mafioso; es el Rey del nuevo orden. Derrotadlo y cortad la cabeza de la serpiente.",
-          objectives: [
-              { id: 'kp-1', text: "Derrotar a Wilson Fisk (Lord Kingpin)", completed: false },
-              { id: 'kp-2', text: "Recuperar el control de Nueva York", completed: false }
-          ],
-          zoneId: 3,
-          position: { x: 854, y: 222 }, // Same coordinates
-          status: MissionStatus.LOCKED,
-          dependencies: ['vestibulo-condenados'],
-          locationState: "New York",
-          gameMode: 'HEROES'
-      };
-
-      setMissions([bunkerHero, bunkerZombie, kravenMission, meatMission, fiskMission, vestibuloMission, kingpinBossMission]);
-      // Use sessionStorage to prevent re-initialization if navigating back/forth
-      sessionStorage.setItem('missions_initialized', 'true');
+        setMissions([bunkerHero, bunkerZombie, kravenMission, meatMission, fiskMission, vestibuloMission, kingpinBossMission]);
     }
-  }, [missions.length, initializeDefaultMissions]); // Added initializeDefaultMissions to dependencies
+  }, []);
 
   // Filter missions based on active active mode AND visibility rules (Fog of War)
   const visibleMissions = useMemo(() => 
@@ -367,13 +330,13 @@ const App: React.FC = () => {
 
   // EXPORT FUNCTIONALITY
   const handleExportGame = () => {
-    const dataToSave: GameState = {
+    const dataToSave = {
         version: "1.0",
         timestamp: new Date().toISOString(),
         gameMode: currentMode,
         missions,
         heroes,
-        selectedMissionId: selectedMissionId
+        stateLocations // Optional, but good for restoring map positions accurately if they changed
     };
 
     const jsonString = JSON.stringify(dataToSave, null, 2);
@@ -391,66 +354,13 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // --- Firebase Save/Load Functions ---
-  const handleSaveGame = async () => {
-    if (!user) {
-      alert("Debes iniciar sesión para guardar tu partida.");
-      return;
-    }
-    const gameState: GameState = { 
-      missions, 
-      selectedMissionId, 
-      heroes, 
-      gameMode: currentMode 
-    }; 
-    await saveGameToCloud(user.uid, gameState);
-    alert("Partida guardada en la nube!");
-  };
-
-  const handleLoadGame = async (uid: string) => {
-    const savedState = await loadGameFromCloud(uid);
-    if (savedState) {
-      setMissions(savedState.missions);
-      setSelectedMissionId(savedState.selectedMissionId);
-      setHeroes(savedState.heroes);
-      setCurrentMode(savedState.gameMode);
-      alert("Partida cargada de la nube!");
-    } else {
-      alert("No se encontró partida guardada en la nube.");
-    }
-  };
-
-  // --- Story Intro Choice Handlers ---
-  const handleChooseHero = () => {
-    setCurrentMode('HEROES');
-    setViewMode('MAP');
-  };
-
-  const handleChooseZombie = () => {
-    setCurrentMode('ZOMBIES');
-    setViewMode('MAP');
-  };
-
-  // --- Render Logic ---
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-white font-mono text-xl">
-        <svg className="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Cargando datos de seguridad...
-      </div>
-    );
-  }
-
   // VIEW ROUTING
   return (
     <div className="flex w-screen h-screen overflow-hidden bg-dark-bg">
       
       {/* LOGIN MODE */}
       {viewMode === 'LOGIN' && (
-        <LoginPage onLoginSuccess={() => { /* Handled by Firebase auth listener */ }} />
+        <LoginPage onLoginSuccess={() => setViewMode('HOME')} />
       )}
 
       {/* HOME MODE */}
@@ -463,28 +373,26 @@ const App: React.FC = () => {
 
       {/* STORY MODE */}
       {viewMode === 'STORY' && (
-        <StoryIntro 
-          onClose={() => setViewMode('HOME')} 
-          onChooseHero={handleChooseHero} 
-          onChooseZombie={handleChooseZombie} 
-        />
+        <StoryIntro onClose={() => setViewMode('HOME')} />
       )}
 
       {/* BUNKER MODE */}
       {viewMode === 'BUNKER' ? (
         <Bunker 
            heroes={heroes}
-           missions={missions} 
+           missions={missions} // Pass all missions so we can assign cross-mode or filter inside
            onAddHero={handleAddHero}
            onUpdateHero={handleUpdateHero}
            onDeleteHero={handleDeleteHero}
-           onClose={() => setViewMode('HOME')} 
+           onClose={() => setViewMode('HOME')} // Return to HOME
         />
-      ) : viewMode === 'MAP' ? ( /* Corrected ternary */
+      ) : (
+        /* MAP MODE */
+        viewMode === 'MAP' && (
         <>
           <main className="flex-1 relative transition-colors duration-700">
             <MapBoard 
-              missions={visibleMissions} 
+              missions={visibleMissions} // Only pass filtered missions (Available/Completed)
               selectedMissionId={selectedMissionId}
               onMissionMove={handleMissionMove}
               onMissionSelect={handleMissionSelect}
@@ -521,13 +429,10 @@ const App: React.FC = () => {
               onToggleBunker={() => setViewMode('BUNKER')}
               onOpenStory={() => setViewMode('STORY')}
               onExportGame={handleExportGame}
-              user={user} 
-              onLogout={logout} 
-              onSaveGame={handleSaveGame} 
             />
           </aside>
         </>
-      ) : null /* Fallback for unhandled view modes */ }
+      }
     </div>
   );
 };
