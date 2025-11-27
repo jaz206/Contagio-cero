@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, X, ShieldAlert, FileText, Terminal } from 'lucide-react';
 
@@ -25,48 +24,48 @@ const STORY_SCENES: Scene[] = [
   {
     id: 3,
     image: 'https://i.pinimg.com/1200x/99/80/1e/99801e7603e4a770127ce29530f13f87.jpg',
-    text: "Tres hombres se reunieron allí: Victor Von Doom, Magneto y Wilson Fisk. Tres egos tan grandes que apenas cabían en la misma habitación. Decidieron que la humanidad era demasiado caótica. Su solución fue el Pulso Nulificador. Necesitaban cuerpos para afinar la fórmula.",
+    text: "Tres hombres se reunieron allí: Victor Von Doom, Magneto y Wilson Fisk. Tres egos tan grandes que apenas cabían en la misma habitación. Decidieron que la humanidad era demasiado caótica. Su solución fue el Pulso Nulificador.",
     caption: "LA TRÍADA DE LA ARROGANCIA"
   },
   {
     id: 4,
     image: 'https://i.pinimg.com/1200x/19/26/53/1926533335a2b27c4a79c9d2632ec83d.jpg',
-    text: "Necesitaban cuerpos para afinar la fórmula. Usaron a Jamie Madrox para ver cómo se multiplicaba la infección. Usaron a los Reavers para ver si el metal podía enfermar. Y funcionó.... Dios, cómo funcionó.",
+    text: "Necesitaban cuerpos para afinar la fórmula. Usaron a Jamie Madrox para ver cómo se multiplicaba la infección. Usaron a los Reavers para ver si el metal podía enfermar. Y funcionó. Dios, cómo funcionó.",
     caption: "EXPERIMENTOS CLASIFICADOS"
   },
   {
     id: 5,
-    image: 'https://i.pinimg.com/1200x/b2/06/15/b20615925dfa53cdf9622fb596cdd5e3.jpg',
+    image: 'https://i.pinimg.com/736x/cf/f1/de/cff1deef61e1fb966db87e788e70935b.jpg',
     text: "Pero la arrogancia es una pistola cargada que siempre apunta hacia atrás. Decidieron probar su obra maestra en Bruce Banner. Buscaban una fuente de energía infinita...",
     caption: "EL PACIENTE CERO"
   },
   {
     id: 6,
     image: 'https://i.pinimg.com/1200x/a8/e9/b7/a8e9b76d6a9a87de0cfba509d5fef534.jpg',
-    text: "...lo que consiguieron fue una bomba biológica. Cuando el virus tocó la sangre gamma, no murió. Se enfureció. Banner no cayó. La cosa que despertó —esa montaña de músculo verde y rabia— ya no tenía a nadie al volante. El estallido no fue de fuego, fue de contagio.",
+    text: "...lo que consiguieron fue una bomba biológica. Cuando el virus tocó la sangre gamma, no murió. Se enfureció. Banner no cayó.",
     caption: "FALLO DE CONTENCIÓN"
   },
   {
     id: 7,
     image: 'https://i.pinimg.com/1200x/eb/db/e8/ebdbe8d5738acd105654dc8ddad8216f.jpg',
-    text: "En cuestión de horas, Nueva York era un matadero. Los Vengadores cayeron primero, destrozados por los amigos que intentaban salvar. Los X-Men aguantaron un poco más, solo para ver cómo su escuela se convertía en un buffet libre.",
+    text: "La cosa que despertó —esa montaña de músculo verde y rabia— ya no tenía a nadie al volante. El estallido no fue de fuego, fue de contagio.",
     caption: "EL FIN"
   },
   {
     id: 8,
-    image: 'https://i.pinimg.com/1200x/b9/0a/18/b90a18369639b131f91273f019b699cd.jpg',
+    image: 'https://i.pinimg.com/1200x/71/06/7d/71067db72856dfd6ca03d0d51a679bd6.jpg',
     text: "En cuestión de horas, Nueva York era un matadero. Los Vengadores cayeron primero, destrozados por los amigos que intentaban salvar. Los X-Men aguantaron un poco más, solo para ver cómo su escuela se convertía en un buffet libre.",
     caption: "CAÍDA DE HÉROES"
   },
   {
     id: 9,
-    image: 'https://i.pinimg.com/1200x/e1/02/86/e102864e130bfa5b5f2ffc5a9d9ed9c0.jpg',
+    image: 'https://i.pinimg.com/1200x/99/80/1e/99801e7603e4a770127ce29530f13f87.jpg',
     text: "¿Y la Tríada? No perdieron la mente. Sus cuerpos se pudrieron, pero su intelecto permaneció intacto, afilado y hambriento. Ahora gobiernan facciones de pesadilla: Doomsberg, el Edén Roto y el Imperio de la Carne.",
     caption: "LOS NUEVOS REYES"
   },
   {
     id: 10,
-    image: 'https://i.pinimg.com/1200x/e2/5c/3a/e25c3ac26e5fc65f9119b6073912e856.jpg',
+    image: 'https://cdnb.artstation.com/p/assets/images/images/024/956/983/large/luca-pizzari-shield-helicarrier-color.jpg?1584097863',
     text: "Pero hay algo más ahí fuera. Cuando la gente murió, las máquinas no se apagaron. S.H.I.E.L.D. sigue activo. Nick Fury está muerto. Pero el 'Protocolo Lázaro' sigue corriendo en servidores enterrados.",
     caption: "LA IA VIGILANTE"
   },
@@ -141,7 +140,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden font-mono" onClick={handleSkip}>
+    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden font-mono" onClick={handleSkip}>
       
       {/* Visual Effects */}
       <div className="scanlines"></div>
@@ -153,7 +152,7 @@ const StoryIntro: React.FC<StoryIntroProps> = ({ onClose }) => {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-[100] w-full max-w-5xl h-[85vh] flex flex-col bg-slate-950 border-2 border-slate-800 shadow-2xl overflow-hidden">
+      <div className="relative z-50 w-full max-w-5xl h-[85vh] flex flex-col bg-slate-950 border-2 border-slate-800 shadow-2xl overflow-hidden">
         
         {/* Header - SHIELD STYLE */}
         <div className="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Hero, Mission, MissionStatus, PersonalObjective } from '../types';
 import { Users, BookOpen, Shield, Target, Plus, Trash2, CheckSquare, Square, Save, MapPin } from 'lucide-react';
@@ -98,7 +97,7 @@ const Bunker: React.FC<BunkerProps> = ({
           onClick={onClose}
           className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-xs font-bold uppercase transition-colors"
         >
-          Volver a Inicio
+          Volver al Mapa
         </button>
       </div>
 

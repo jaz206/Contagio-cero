@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Mission, BossZone, MissionStatus, Objective, Coordinates, GameMode } from '../types';
 import { BOSS_ZONES, STATE_ZONE_MAPPING } from '../constants';
@@ -19,7 +18,7 @@ interface ControlPanelProps {
   currentMode: GameMode;
   onSetMode: (mode: GameMode) => void;
   onToggleBunker: () => void;
-  onOpenStory: () => void; 
+  onOpenStory: () => void; // New prop
   onExportGame: () => void; 
 }
 
@@ -59,12 +58,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               setDescription(selectedMission.description || '');
               prevMissionIdRef.current = selectedMission.id;
           }
-      } else {
-          // Clear local state if no mission is selected
-          setTitle('');
-          setDescription('');
-          setNewObjectiveText('');
-          prevMissionIdRef.current = null;
       }
   }, [selectedMissionId, selectedMission]);
 
@@ -256,7 +249,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 
                 {/* List Zones */}
                 {BOSS_ZONES.map(zone => {
-                    const zoneMissions = missions.filter(m => m.zoneId === zone.id && m.gameMode === currentMode); // Filter by gameMode too
+                    const zoneMissions = missions.filter(m => m.zoneId === zone.id);
                     
                     return (
                         <div key={zone.id} className="space-y-2">

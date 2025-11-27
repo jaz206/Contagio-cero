@@ -1,12 +1,9 @@
 
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import MapBoard from './components/MapBoard';
 import ControlPanel from './components/ControlPanel';
 import Bunker from './components/Bunker';
 import StoryIntro from './components/StoryIntro';
-import LoginPage from './components/LoginPage'; // Import LoginPage
-import HomePage from './components/HomePage'; // Import HomePage
 import { Mission, Coordinates, MissionStatus, GameMode, Hero, ViewMode } from './types';
 
 const App: React.FC = () => {
@@ -14,7 +11,7 @@ const App: React.FC = () => {
   const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const [stateLocations, setStateLocations] = useState<Record<string, Coordinates>>({});
   const [currentMode, setCurrentMode] = useState<GameMode>('HEROES');
-  const [viewMode, setViewMode] = useState<ViewMode>('LOGIN'); // Start in LOGIN view
+  const [viewMode, setViewMode] = useState<ViewMode>('MAP');
 
   const [heroes, setHeroes] = useState<Hero[]>([
     {
@@ -358,22 +355,9 @@ const App: React.FC = () => {
   return (
     <div className="flex w-screen h-screen overflow-hidden bg-dark-bg">
       
-      {/* LOGIN MODE */}
-      {viewMode === 'LOGIN' && (
-        <LoginPage onLoginSuccess={() => setViewMode('HOME')} />
-      )}
-
-      {/* HOME MODE */}
-      {viewMode === 'HOME' && (
-        <HomePage 
-          onStartGame={() => setViewMode('MAP')}
-          onViewStory={() => setViewMode('STORY')}
-        />
-      )}
-
       {/* STORY MODE */}
       {viewMode === 'STORY' && (
-        <StoryIntro onClose={() => setViewMode('HOME')} />
+        <StoryIntro onClose={() => setViewMode('MAP')} />
       )}
 
       {/* BUNKER MODE */}
@@ -384,11 +368,10 @@ const App: React.FC = () => {
            onAddHero={handleAddHero}
            onUpdateHero={handleUpdateHero}
            onDeleteHero={handleDeleteHero}
-           onClose={() => setViewMode('HOME')} // Return to HOME
+           onClose={() => setViewMode('MAP')}
         />
       ) : (
-        /* MAP MODE */
-        viewMode === 'MAP' && (
+        /* MAP MODE (Default) */
         <>
           <main className="flex-1 relative transition-colors duration-700">
             <MapBoard 
@@ -432,7 +415,7 @@ const App: React.FC = () => {
             />
           </aside>
         </>
-      }
+      )}
     </div>
   );
 };
